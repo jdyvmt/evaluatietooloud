@@ -385,12 +385,10 @@ function loadEvaluationForStudent() {
 
   if (!currentSelectedStudent || !currentSelectedTask) return;
 
-  // Haal evaluaties op (gesorteerd op datum nieuwst eerst)
   const evals = appData.evaluations
     .filter(e => e.studentId === currentSelectedStudent.id && e.taskId === currentSelectedTask.id)
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  // Historiek Weergave
   const historyCard = document.getElementById("student-history-card");
   const historyContent = document.getElementById("history-content");
   const retryBtn = document.getElementById("btn-retry-eval");
@@ -405,7 +403,6 @@ function loadEvaluationForStudent() {
       </div>
     `).join("");
 
-    // Laad meest recente evaluatie in formulier
     const latest = evals[0];
     currentScores = JSON.parse(JSON.stringify(latest.scores || {}));
     document.getElementById("eval-general-feedback").value = latest.feedback || "";
@@ -584,7 +581,7 @@ function startRetryEvaluation() {
    ========================================================================== */
 
 function verzamelPdfData(student, task, evaluation) {
-  let criteriaData = [];
+  let parameters = [];
   let currentTotal = 0;
   let maxTotal = 0;
 
@@ -601,21 +598,25 @@ function verzamelPdfData(student, task, evaluation) {
       currentTotal += sel.score * w;
     }
 
-    criteriaData.push({
-      title: c.title,
-      scoreText: level ? `${level.score} / ${maxLevelScore} pt` : 'Niet beoordeeld',
-      desc: level ? level.desc : '-'
+    parameters.push({
+      naam: c.title,
+      score: level ? level.score : 0,
+      max: maxLevelScore,
+      criterium: level ? level.desc || level.label : 'Niet beoordeeld'
     });
   });
+
+  const mins = Math.floor((evaluation ? evaluation.timerSeconds : timerSeconds) / 60).toString().padStart(2, "0");
+  const secs = ((evaluation ? evaluation.timerSeconds : timerSeconds) % 60).toString().padStart(2, "0");
 
   return {
     titel: task.title,
     leerling: student.name,
     klas: currentSelectedClass ? currentSelectedClass.name : '-',
-    schooljaar: appData.currentSchoolYear,
     datum: evaluation ? evaluation.date : new Date().toLocaleDateString("nl-BE"),
-    criteria: criteriaData,
-    feedback: evaluation ? evaluation.feedback : document.getElementById("eval-general-feedback").value.trim(),
+    duur: `${mins}:${secs}`,
+    parameters: parameters,
+    feedback: evaluation ? evaluation.feedback || 'Geen extra opmerkingen.' : document.getElementById("eval-general-feedback").value.trim() || 'Geen extra opmerkingen.',
     eindscore: currentTotal,
     maxEindscore: maxTotal
   };
@@ -623,42 +624,52 @@ function verzamelPdfData(student, task, evaluation) {
 
 function bouwPdfHtml(data) {
   let rijen = '';
-  data.criteria.forEach(c => {
-    rijen += `<tr>
-      <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">${c.title}</td>
-      <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${c.scoreText}</td>
-      <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; color: #475569;">${c.desc}</td>
-    </tr>`;
+  data.parameters.forEach(param => {
+    rijen += `
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">${param.naam}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">${param.score} / ${param.max}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${param.criterium}</td>
+      </tr>`;
   });
 
   return `
-    <div style="font-family: Arial, sans-serif; padding: 25px; color: #111; font-size: 10pt;">
-      <h2 style="text-transform: uppercase; margin-bottom: 8px; font-size: 14pt;">${data.titel}</h2>
-      <div style="line-height: 1.5; margin-bottom: 15px; font-size: 9pt;">
-        <strong>Leerling:</strong> ${data.leerling} (${data.klas})<br>
-        <strong>Schooljaar:</strong> ${data.schooljaar} | <strong>Leerkracht:</strong> Dhr. J. Vermote<br>
-        <strong>School:</strong> Atheneum Brugge | <strong>Datum:</strong> ${data.datum}
-      </div>
-      <hr style="border: none; border-top: 2px solid #111; margin-bottom: 15px;">
+    <div style="font-family: Helvetica, Arial, sans-serif; padding: 30px; color: #111;">
+      <h2 style="text-transform: uppercase; border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 15px;">
+        ${data.titel}
+      </h2>
       
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+      <p style="font-size: 11pt; color: #444; margin-bottom: 25px;">
+        <strong>Leerling:</strong> ${data.leerling} (${data.klas})<br>
+        <strong>Datum:</strong> ${data.datum} | <strong>Duur:</strong> ${data.duur}
+      </p>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; text-align: left;">
         <thead>
-          <tr style="background-color: #f1f5f9; text-align: left; font-size: 8pt; text-transform: uppercase;">
-            <th style="padding: 8px;">Criterium</th>
+          <tr style="border-bottom: 1.5px solid #111; font-size: 9pt; text-transform: uppercase; color: #666;">
+            <th style="padding: 8px;">Parameter</th>
             <th style="padding: 8px;">Score</th>
-            <th style="padding: 8px;">Uitleg</th>
+            <th style="padding: 8px;">Toegepaste Criteria</th>
           </tr>
         </thead>
-        <tbody>${rijen}</tbody>
+        <tbody>
+          ${rijen}
+        </tbody>
       </table>
 
-      <div style="font-size: 8pt; font-weight: bold; text-transform: uppercase; margin-bottom: 4px;">Feedback</div>
-      <div style="background: #f9f9f9; border-left: 3px solid #111; padding: 8px; margin-bottom: 15px; font-size: 9pt;">${data.feedback || 'Geen extra opmerkingen.'}</div>
-
-      <div style="text-align: right; font-weight: bold; font-size: 12pt;">
-        Eindscore: ${data.eindscore} / ${data.maxEindscore}
+      <div style="font-size: 9pt; font-weight: bold; text-transform: uppercase; color: #666; margin-bottom: 6px;">
+        Feedback & Opmerkingen
       </div>
-    </div>`;
+      <div style="background: #f9f9f9; border-left: 3px solid #111; padding: 12px; margin-bottom: 30px;">
+        ${data.feedback}
+      </div>
+
+      <div style="text-align: right; border-top: 1.5px solid #111; padding-top: 10px;">
+        <span style="font-size: 9pt; text-transform: uppercase; color: #666; font-weight: bold;">Eindscore</span><br>
+        <span style="font-size: 18pt; font-weight: bold;">${data.eindscore} / ${data.maxEindscore}</span>
+      </div>
+    </div>
+  `;
 }
 
 function exportStudentPDF() {
@@ -789,7 +800,6 @@ function renderCriteriaEditor() {
   });
 }
 
-// Global scope helpers voor inline onchange/onclick handlers in editor
 window.updateCriterionTitle = (cIdx, val) => { editingTask.criteria[cIdx].title = val; };
 window.updateCriterionWeight = (cIdx, val) => { editingTask.criteria[cIdx].weight = parseFloat(val) || 1; };
 window.removeCriterion = (cIdx) => { editingTask.criteria.splice(cIdx, 1); renderCriteriaEditor(); };
@@ -1085,55 +1095,4 @@ function changePassword() {
       alert("Wachtwoord succesvol gewijzigd!");
     }
   }
-}
-function bouwPdfHtml(data) {
-  // 1. Maak een rij per parameter
-  let rijen = '';
-  data.parameters.forEach(param => {
-    rijen += `
-      <tr>
-        <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">${param.naam}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">${param.score} / ${param.max}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #eee;">${param.criterium}</td>
-      </tr>`;
-  });
-
-  // 2. Geef de volledige HTML terug
-  return `
-    <div style="font-family: Helvetica, Arial, sans-serif; padding: 30px; color: #111;">
-      <h2 style="text-transform: uppercase; border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 15px;">
-        ${data.titel}
-      </h2>
-      
-      <p style="font-size: 11pt; color: #444; margin-bottom: 25px;">
-        <strong>Leerling:</strong> ${data.leerling} (${data.klas})<br>
-        <strong>Datum:</strong> ${data.datum} | <strong>Duur:</strong> ${data.duur}
-      </p>
-
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; text-align: left;">
-        <thead>
-          <tr style="border-bottom: 1.5px solid #111; font-size: 9pt; text-transform: uppercase; color: #666;">
-            <th style="padding: 8px;">Parameter</th>
-            <th style="padding: 8px;">Score</th>
-            <th style="padding: 8px;">Toegepaste Criteria</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rijen}
-        </tbody>
-      </table>
-
-      <div style="font-size: 9pt; font-weight: bold; text-transform: uppercase; color: #666; margin-bottom: 6px;">
-        Feedback & Opmerkingen
-      </div>
-      <div style="background: #f9f9f9; border-left: 3px solid #111; padding: 12px; margin-bottom: 30px;">
-        ${data.feedback}
-      </div>
-
-      <div style="text-align: right; border-top: 1.5px solid #111; padding-top: 10px;">
-        <span style="font-size: 9pt; text-transform: uppercase; color: #666; font-weight: bold;">Eindscore</span><br>
-        <span style="font-size: 18pt; font-weight: bold;">${data.eindscore} / ${data.maxEindscore}</span>
-      </div>
-    </div>
-  `;
 }
