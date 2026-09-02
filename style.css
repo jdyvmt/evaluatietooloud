@@ -189,9 +189,9 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 .pdf-title {
   color: #243aa5;
   font-size: 18pt;
-  line-height: 1.15;
+  line-height: 1.4;
   font-weight: 600;
-  margin: 0 0 1.5mm;
+  margin: 0 0 6mm;
 }
 .pdf-student-line {
   color: #243aa5;
