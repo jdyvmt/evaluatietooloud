@@ -613,25 +613,33 @@ function bouwPdfHtml(data) {
 }
 
 function exportStudentPDF() {
-  if (!currentSelectedStudent || !currentSelectedTask) { alert("Selecteer leerling en opdracht."); return; }
+  if (!currentSelectedStudent || !currentSelectedTask) {
+    alert("Selecteer een leerling en opdracht.");
+    return;
+  }
   const evalData = appData.evaluations.find(e => e.studentId === currentSelectedStudent.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
   
   const container = document.createElement("div");
-  container.style.position = "fixed";
-  container.style.top = "0";
-  container.style.left = "0";
-  container.style.zIndex = "999999";
-  container.innerHTML = bouwPdfHtml(data);
+  const pageDiv = document.createElement("div");
+  pageDiv.className = "pdf-page-container";
+  pageDiv.innerHTML = bouwPdfHtml(data);
+  container.appendChild(pageDiv);
+  
   document.body.appendChild(container);
 
-  html2pdf().from(container).set({
-    margin: 5,
-    filename: `Evaluatie_${currentSelectedStudent.name}.pdf`,
+  const opt = {
+    margin: 10,
+    filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+    pagebreak: { mode: ['css', 'legacy'] },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).save().then(() => document.body.removeChild(container));
+  };
+  
+  html2pdf().set(opt).from(container).save().then(() => {
+    document.body.removeChild(container);
+  });
 }
 
 function exportClassPDF() {
