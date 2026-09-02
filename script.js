@@ -611,49 +611,31 @@ function verzamelPdfData(student, task, evaluation) {
   };
 }
 function bouwPdfHtml(data) {
-  let rijen = '';
-  data.parameters.forEach(param => {
-    rijen += `
-      <tr>
-        <td class="pdf-param">${param.naam}</td>
-        <td class="pdf-score">${param.score}</td>
-        <td class="pdf-criteria">${param.criterium}</td>
-      </tr>`;
-  });
-
   return `
-    <div class="pdf-document">
-      <div class="pdf-topline">
-        <h1 class="pdf-title">${data.titel}</h1>
-        <div class="pdf-student-line">${data.leerling} &middot; ${data.klas}</div>
-        <div class="pdf-meta-line">
-          <span><strong>Datum:</strong> ${data.datum}</span>
-          <span><strong>Spreektijd:</strong> ${data.duur}</span>
-          <span>${data.leerkracht}</span>
-          <span>${data.schooljaar}</span>
-          <span>${data.school}</span>
-        </div>
-      </div>
+    <div style="
+      background: white;
+      color: black;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      border: 2px solid red;
+    ">
+      <h1>TEST PDF</h1>
 
-      <h2 class="pdf-section-title">Beoordeling</h2>
+      <p><strong>Leerling:</strong> ${data.leerling}</p>
 
-      <table class="pdf-table">
-        <thead>
-          <tr>
-            <th class="pdf-param">Criteria</th>
-            <th class="pdf-score">Score</th>
-            <th class="pdf-criteria">Uitleg</th>
-          </tr>
-        </thead>
-        <tbody>${rijen}</tbody>
-      </table>
+      <p><strong>Opdracht:</strong> ${data.titel}</p>
 
-      <div class="pdf-feedback">
-        <div class="pdf-feedback-title">Feedback</div>
-        <div class="pdf-feedback-text">${data.feedback}</div>
-      </div>
+      <p><strong>Klas:</strong> ${data.klas}</p>
 
-      <div class="pdf-final-score">Eindscore: ${data.eindscore}</div>
+      <p><strong>Schooljaar:</strong> ${data.schooljaar}</p>
+
+      <p><strong>Datum:</strong> ${data.datum}</p>
+
+      <p>
+        Als je deze tekst ziet vanaf pagina 1,
+        dan zit het probleem in de HTML/CSS-layout.
+      </p>
     </div>
   `;
 }
@@ -679,22 +661,23 @@ function exportStudentPDF() {
 
   const container = document.createElement("div");
 
-  container.innerHTML = `
-    <div style="background:#ffffff; font-family:sans-serif;">
-      ${bouwPdfHtml(data)}
-    </div>
-  `;
+  container.style.background = "white";
+  container.innerHTML = bouwPdfHtml(data);
+
+  console.log("PDF HTML:");
+  console.log(container.outerHTML);
+
+  document.body.appendChild(container);
 
   html2pdf()
     .from(container)
     .set({
       margin: 10,
-      filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
+      filename: "TEST_PDF.pdf",
+      image: { type: "jpeg", quality: 1 },
       html2canvas: {
-        scale: 2,
-        useCORS: true,
-        letterRendering: true
+        scale: 1,
+        useCORS: true
       },
       jsPDF: {
         unit: "mm",
@@ -702,7 +685,10 @@ function exportStudentPDF() {
         orientation: "portrait"
       }
     })
-    .save();
+    .save()
+    .then(() => {
+      document.body.removeChild(container);
+    });
 }
 function exportClassPDF() {
   const activeClass = currentSelectedClass || editingClass;
