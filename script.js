@@ -9,9 +9,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// Wachtwoord controleren via formulier submit
-function handleLogin(event) {
-  event.preventDefault(); // Voorkom dat de pagina opnieuw ververst
+// Wachtwoord controleren
+function checkPassword() {
   const input = document.getElementById("password-input").value;
   const errorMsg = document.getElementById("login-error");
 
@@ -21,6 +20,13 @@ function handleLogin(event) {
     showApp();
   } else {
     errorMsg.innerText = "Onjuist wachtwoord. Probeer opnieuw.";
+  }
+}
+
+// Inloggen via de Enter-toets opvangen
+function checkEnter(event) {
+  if (event.key === "Enter") {
+    checkPassword();
   }
 }
 
