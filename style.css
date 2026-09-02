@@ -120,3 +120,141 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 .mb-3 { margin-bottom: 1rem; }
 .ml-2 { margin-left: 0.5rem; }
 .text-muted { color: #64748b; font-size: 0.85rem; }
+
+/* LEERLINGENBEHEER */
+.student-management-panel {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+.student-management-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, 220px) auto;
+  gap: 0.75rem;
+  align-items: end;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+.student-management-row:last-child { border-bottom: none; }
+.student-management-row .field-group { margin-bottom: 0; }
+.student-management-row label { font-size: 0.75rem; }
+.student-management-actions { display: flex; gap: 0.5rem; align-items: center; }
+.detail-eval-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.detail-score-badge {
+  background: #eff6ff;
+  color: #1e3a8a;
+  border: 1px solid #bfdbfe;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* PDF-preview styling (html2pdf) */
+.pdf-document {
+  width: 277mm;
+  min-height: 190mm;
+  padding: 11mm 12mm 9mm;
+  box-sizing: border-box;
+  background: #ffffff;
+  color: #1e293b;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.pdf-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  border-bottom: 1.2px solid #3347a6;
+  padding-bottom: 4mm;
+  margin-bottom: 6mm;
+}
+.pdf-title {
+  color: #243aa5;
+  font-size: 18pt;
+  line-height: 1.15;
+  font-weight: 800;
+  margin: 0;
+}
+.pdf-meta-right {
+  text-align: right;
+  color: #444;
+  font-size: 10.5pt;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+.pdf-student-line {
+  color: #111827;
+  font-size: 11.5pt;
+  font-weight: 700;
+  margin-top: 1.5mm;
+}
+.pdf-section-title {
+  color: #243aa5;
+  font-size: 13pt;
+  font-weight: 800;
+  margin: 0 0 4mm;
+}
+.pdf-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-bottom: 7mm;
+}
+.pdf-table th {
+  background: #f2f0f4;
+  color: #243aa5;
+  text-align: left;
+  padding: 2.5mm 3.5mm;
+  font-size: 10.5pt;
+  font-weight: 800;
+}
+.pdf-table td {
+  border-bottom: 1px solid #d9d9df;
+  padding: 3.2mm 3.5mm;
+  vertical-align: middle;
+  font-size: 10.2pt;
+}
+.pdf-table .pdf-param { width: 28%; color: #243aa5; font-weight: 800; }
+.pdf-table .pdf-score { width: 14%; color: #243aa5; font-weight: 800; white-space: nowrap; }
+.pdf-table .pdf-criteria { width: 58%; color: #3f3f46; font-style: italic; }
+.pdf-feedback {
+  background: #f3f1f4;
+  border-radius: 4mm;
+  padding: 4mm 4.5mm;
+  margin-top: 1mm;
+  margin-bottom: 7mm;
+}
+.pdf-feedback-title {
+  color: #243aa5;
+  font-size: 12pt;
+  font-weight: 800;
+  margin-bottom: 2mm;
+}
+.pdf-feedback-text {
+  color: #171717;
+  font-size: 10.5pt;
+  line-height: 1.4;
+}
+.pdf-final-score {
+  border-top: 1.2px solid #3347a6;
+  padding-top: 3mm;
+  text-align: right;
+  color: #243aa5;
+  font-size: 14pt;
+  font-weight: 800;
+}
+
+@media (max-width: 800px) {
+  .student-management-row { grid-template-columns: 1fr; }
+  .student-management-actions { justify-content: flex-start; }
+  .eval-header-info { flex-direction: column; align-items: stretch; }
+  .eval-header-right { justify-content: space-between; }
+}
+
