@@ -406,7 +406,6 @@ function renderRubrics() {
     header.className = "rubric-header";
     header.innerHTML = `
       <h4>${criterion.title}</h4>
-      <span class="badge">Gewicht: ${criterion.weight || 1}x</span>
     `;
     block.appendChild(header);
 
@@ -427,11 +426,10 @@ function renderRubrics() {
       `;
 
       btn.addEventListener("click", () => {
-        currentScores[criterion.id] = {
-          levelIndex: lIdx,
-          score: level.score,
-          weight: criterion.weight || 1
-        };
+       currentScores[criterion.id] = {
+  levelIndex: lIdx,
+  score: level.score
+};
         renderRubrics();
       });
 
@@ -451,13 +449,12 @@ function updateScoreDisplay() {
 
   if (currentSelectedTask) {
     currentSelectedTask.criteria.forEach(c => {
-      const w = c.weight || 1;
-      const maxLevelScore = Math.max(...c.levels.map(l => l.score), 0);
-      maxTotal += maxLevelScore * w;
+     const maxLevelScore = Math.max(...c.levels.map(l => l.score), 0);
+maxTotal += maxLevelScore;
 
-      if (currentScores[c.id]) {
-        currentTotal += currentScores[c.id].score * w;
-      }
+if (currentScores[c.id]) {
+  currentTotal += currentScores[c.id].score;
+}
     });
   }
 
@@ -498,12 +495,12 @@ function saveCurrentEvaluation() {
   let maxTotal = 0;
 
   currentSelectedTask.criteria.forEach(c => {
-    const w = c.weight || 1;
     const maxLevelScore = Math.max(...c.levels.map(l => l.score), 0);
-    maxTotal += maxLevelScore * w;
-    if (currentScores[c.id]) {
-      currentTotal += currentScores[c.id].score * w;
-    }
+maxTotal += maxLevelScore;
+
+if (currentScores[c.id]) {
+  currentTotal += currentScores[c.id].score;
+}
   });
 
   const evaluationData = {
@@ -558,9 +555,9 @@ function verzamelPdfData(student, task, evaluation) {
   let maxTotal = 0;
 
   task.criteria.forEach(c => {
-    const w = c.weight || 1;
-    const maxLevelScore = Math.max(...c.levels.map(l => Number(l.score) || 0), 0);
-    maxTotal += maxLevelScore * w;
+   if (sel) {
+  currentTotal += sel.score;
+}
 
     const scoresObj = evaluation ? (evaluation.scores || {}) : currentScores;
     const sel = scoresObj[c.id];
@@ -748,14 +745,22 @@ function renderCriteriaEditor() {
           <label>Criterium Titel:</label>
           <input type="text" value="${c.title}" onchange="updateCriterionTitle(${cIdx}, this.value)">
         </div>
-        <div>
-          <label>Gewicht (x):</label>
-          <input type="number" min="1" value="${c.weight || 1}" onchange="updateCriterionWeight(${cIdx}, this.value)">
-        </div>
       </div>
       <h5>Niveaus:</h5>
-      <div id="levels-editor-${cIdx}"></div>
-      <button class="btn btn-sm btn-danger mt-2" onclick="removeCriterion(${cIdx})">Verwijder Criterium</button>
+<div id="levels-editor-${cIdx}"></div>
+
+<div class="mt-2">
+  <button class="btn btn-sm btn-secondary" onclick="addLevelToCriterion(${cIdx})">
+    + Niveau
+  </button>
+  <button class="btn btn-sm btn-secondary" onclick="removeLevelFromCriterion(${cIdx})">
+    − Niveau
+  </button>
+</div>
+
+<button class="btn btn-sm btn-danger mt-2" onclick="removeCriterion(${cIdx})">
+  Verwijder Criterium
+</button>
     `;
     container.appendChild(box);
 
@@ -774,11 +779,33 @@ function renderCriteriaEditor() {
 }
 
 window.updateCriterionTitle = (cIdx, val) => { editingTask.criteria[cIdx].title = val; };
-window.updateCriterionWeight = (cIdx, val) => { editingTask.criteria[cIdx].weight = parseFloat(val) || 1; };
 window.removeCriterion = (cIdx) => { editingTask.criteria.splice(cIdx, 1); renderCriteriaEditor(); };
 window.updateLevelScore = (cIdx, lIdx, val) => { editingTask.criteria[cIdx].levels[lIdx].score = parseFloat(val) || 0; };
 window.updateLevelLabel = (cIdx, lIdx, val) => { editingTask.criteria[cIdx].levels[lIdx].label = val; };
 window.updateLevelDesc = (cIdx, lIdx, val) => { editingTask.criteria[cIdx].levels[lIdx].desc = val; };
+window.addLevelToCriterion = (cIdx) => {
+  const criterion = editingTask.criteria[cIdx];
+
+  criterion.levels.push({
+    label: "Nieuw niveau",
+    score: 0,
+    desc: ""
+  });
+
+  renderCriteriaEditor();
+};
+
+window.removeLevelFromCriterion = (cIdx) => {
+  const criterion = editingTask.criteria[cIdx];
+
+  if (criterion.levels.length <= 1) {
+    alert("Een criterium moet minstens één niveau hebben.");
+    return;
+  }
+
+  criterion.levels.pop();
+  renderCriteriaEditor();
+};
 
 function addCriterionToEditor() {
   if (!editingTask) return;
