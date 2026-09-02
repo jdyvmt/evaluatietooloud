@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluatietool</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div id="login-screen" class="container card">
+    <h1>Toegang Evaluatietool</h1>
+    <p>Voer het wachtwoord in om door te gaan.</p>
+    <div class="form-group">
+      <input type="password" id="password-input" placeholder="Wachtwoord...">
+      <button onclick="checkPassword()" class="btn-primary">Inloggen</button>
+    </div>
+    <p id="login-error" class="error-msg"></p>
+  </div>
+
+  <div id="app-screen" class="container hidden">
+    
+    <header class="app-header">
+      <h1>Evaluatietool</h1>
+      <button onclick="logout()" class="btn-secondary">Uitloggen</button>
+    </header>
+
+    <nav class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('opdrachten')">Opdrachten & Sjablonen</button>
+      <button class="tab-btn" onclick="switchTab('evalueren')">Evaluatie starten</button>
+    </nav>
+
+    <section id="tab-opdrachten" class="tab-content active">
+      <div class="card">
+        <h2>Nieuwe Opdracht Aanmaken</h2>
+        <div class="form-group">
+          <label for="assignment-title">Titel van de opdracht</label>
+          <input type="text" id="assignment-title" placeholder="bv. Spreekopdracht: Debat">
+        </div>
+        <p><em>(Hier voegen we zometeen het dynamisch toevoegen van parameters en criteria toe)</em></p>
+      </div>
+    </section>
+
+    <section id="tab-evalueren" class="tab-content hidden">
+      <div class="card">
+        <h2>Beoordeling</h2>
+        </div>
+    </section>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
