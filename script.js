@@ -121,7 +121,7 @@ function checkLoginSession() {
   if (!currentUser) {
     loginOverlay.classList.add("active");
   } else {
-    loginOverlay.classList.remove("active");
+    loginOverlay.style.display = "none";
     initEvalScreen();
   }
 }
@@ -649,15 +649,9 @@ function exportStudentPDF() {
     <p>Werkt dit?</p>
   `;
 
-  testDiv.style.position = "fixed";
-  testDiv.style.left = "0";
-  testDiv.style.top = "0";
-  testDiv.style.background = "white";
-  testDiv.style.zIndex = "999999";
-
   document.body.appendChild(testDiv);
 
-  alert("Zie je TEST PDF linksboven op je scherm?");
+  html2pdf(testDiv);
 
 }
 function exportClassPDF() {
