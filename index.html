@@ -9,14 +9,31 @@
 </head>
 <body>
 
+  <!-- SCHERM 0: INLOGSCHERM -->
+  <div id="screen-login" class="login-overlay active">
+    <div class="login-card">
+      <h2>Leerkracht Inloggen</h2>
+      <p>Voer het wachtwoord in om toegang te krijgen tot de evaluatietool.</p>
+      <div class="field-group">
+        <label for="login-password">Wachtwoord:</label>
+        <input type="password" id="login-password" placeholder="Standaard: leerkracht123">
+      </div>
+      <button id="btn-login" class="btn btn-primary full-width">Inloggen</button>
+      <p id="login-error" class="error-msg"></p>
+    </div>
+  </div>
+
+  <!-- HOOFDNAVIGATIE -->
   <header class="navbar">
     <div class="nav-brand">
       <h2>Evaluatietool</h2>
+      <span id="current-year-badge" class="badge-year">Schooljaar: 2025-2026</span>
     </div>
     <nav class="nav-menu">
       <button id="nav-eval" class="nav-link active">Evaluatie</button>
       <button id="nav-dashboard" class="nav-link">Opdrachten & Rubrics</button>
-      <button id="nav-classes" class="nav-link">Klassenbeheer</button>
+      <button id="nav-classes" class="nav-link">Klassen & Leerlingen</button>
+      <button id="btn-logout" class="btn btn-sm btn-danger">Uitloggen</button>
     </nav>
   </header>
 
@@ -24,7 +41,7 @@
   <section id="screen-eval" class="app-screen active">
     <div class="layout-grid">
       <aside class="sidebar-card">
-        <h3>Selectie</h3>
+        <h3>Selectie & Filter</h3>
         <div class="field-group">
           <label for="eval-task-select">Opdracht:</label>
           <select id="eval-task-select"></select>
@@ -32,6 +49,16 @@
         <div class="field-group">
           <label for="eval-class-select">Klas:</label>
           <select id="eval-class-select"></select>
+        </div>
+
+        <div class="field-group search-box">
+          <label for="eval-student-search">Zoek leerling:</label>
+          <input type="text" id="eval-student-search" placeholder="Naam typen...">
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="eval-filter-todo">
+          <label for="eval-filter-todo">Enkel nog te evalueren</label>
         </div>
 
         <h3 class="mt-3">Leerlingen</h3>
@@ -43,10 +70,11 @@
           <div>
             <h2 id="eval-student-title">Selecteer een leerling</h2>
             <span id="eval-task-subtitle" class="badge">Opdracht: -</span>
+            <button id="btn-retry-eval" class="btn btn-sm btn-secondary ml-2" style="display:none;">+ Herkansing Aanmaken</button>
           </div>
           
           <div class="eval-header-right">
-            <!-- TIMER MODULE -->
+            <!-- TIMER -->
             <div class="timer-box">
               <span class="timer-label">Spreektijd</span>
               <div id="timer-display" class="timer-display">00:00</div>
@@ -56,7 +84,7 @@
               </div>
             </div>
 
-            <!-- Totale score weergave -->
+            <!-- SCORE -->
             <div class="total-score-box">
               <span class="score-label">Totale score:</span>
               <span id="eval-total-score" class="score-value">0 / 0</span>
@@ -64,22 +92,37 @@
           </div>
         </div>
 
-        <div id="eval-rubrics-wrapper"></div>
+        <!-- HISTORIEK / PROGRESSIE -->
+        <div id="student-history-card" class="card-section history-panel" style="display:none;">
+          <h4>Progressie & Vorige Evaluaties</h4>
+          <div id="history-content"></div>
+        </div>
 
+        <!-- RUBRICS -->
+        <div id="eval-rubrics-wrapper" class="mt-3"></div>
+
+        <!-- VASTE FEEDBACK SNELKNOPPEN -->
+        <div class="card-section mt-3">
+          <h3>Snelle Standaardopmerkingen</h3>
+          <div id="preset-feedback-chips" class="chips-container"></div>
+        </div>
+
+        <!-- ALGEMENE FEEDBACK -->
         <div class="card-section mt-3">
           <h3>Algemene Feedback & Opmerkingen</h3>
-          <textarea id="eval-general-feedback" placeholder="Automatisch gegenereerde en/of eigen feedback..."></textarea>
+          <textarea id="eval-general-feedback" placeholder="Automatisch gegenereerde en/of gekozen feedback..."></textarea>
         </div>
 
         <div class="button-bar">
           <button id="btn-save-evaluation" class="btn btn-primary">Evaluatie Opslaan</button>
-          <button id="btn-export-pdf" class="btn btn-secondary">Exporteer als PDF</button>
+          <button id="btn-export-pdf" class="btn btn-secondary">Exporteer deze Leerling (PDF)</button>
+          <button id="btn-export-class-pdf" class="btn btn-secondary">Exporteer hele Klas (PDF)</button>
         </div>
       </main>
     </div>
   </section>
 
-  <!-- SCHERM 2: DASHBOARD (OPDRACHTEN & RUBRICS) -->
+  <!-- SCHERM 2: DASHBOARD (OPDRACHTEN & RUBRICS BEWERKEN) -->
   <section id="screen-dashboard" class="app-screen">
     <div class="layout-grid">
       <aside class="sidebar-card">
@@ -91,11 +134,16 @@
       </aside>
 
       <main class="main-card">
-        <h2>Opdracht & Rubrics Bewerken</h2>
+        <h2>Opdracht, Rubrics & Vaste Feedback Bewerken</h2>
         
         <div class="field-group">
           <label for="task-name-input">Titel van de opdracht:</label>
           <input type="text" id="task-name-input" placeholder="Bijv. Spreken: Presentatie">
+        </div>
+
+        <div class="field-group">
+          <label for="task-presets-input">Vaste opmerkingen (gescheiden door komma's):</label>
+          <input type="text" id="task-presets-input" placeholder="Bijv. Let op je tempo, Duidelijke structuur, Goed oogcontact">
         </div>
 
         <hr class="separator">
@@ -115,7 +163,7 @@
     </div>
   </section>
 
-  <!-- SCHERM 3: KLASSENBEHEER -->
+  <!-- SCHERM 3: KLASSENBEHEER & SCHOOLJAAR -->
   <section id="screen-classes" class="app-screen">
     <div class="layout-grid">
       <aside class="sidebar-card">
@@ -124,6 +172,14 @@
           <button id="btn-add-class" class="btn btn-sm btn-primary">+ Nieuw</button>
         </div>
         <ul id="classes-class-list" class="selectable-list"></ul>
+
+        <hr class="separator">
+
+        <div class="schoolyear-box">
+          <h4>Schooljaar Beheren</h4>
+          <p>Start een nieuw schooljaar om over te stappen naar nieuwe klassen met behoud van de leerlinghistoriek.</p>
+          <button id="btn-new-schoolyear" class="btn btn-sm btn-secondary mt-2">Nieuw Schooljaar Starten</button>
+        </div>
       </aside>
 
       <main class="main-card">
@@ -137,7 +193,7 @@
 
         <div class="field-group">
           <label for="class-students-input">Leerlingen (één naam per regel):</label>
-          <textarea id="class-students-input" rows="10" placeholder="Jan Peeters&#10;Sophie Devos&#10;Lucas Janssens"></textarea>
+          <textarea id="class-students-input" rows="12" placeholder="Jan Peeters&#10;Sophie Devos&#10;Lucas Janssens"></textarea>
         </div>
 
         <div class="button-bar mt-3">
