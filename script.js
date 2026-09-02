@@ -1592,7 +1592,3 @@ function moveLevel(criterionIdx, levelIdx, direction) {
   
   renderCriteriaEditor();
 }
-alert(
-  "html2pdf = " + typeof html2pdf +
-  "\nhtml2canvas = " + typeof html2canvas
-);
