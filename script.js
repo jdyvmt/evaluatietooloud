@@ -718,7 +718,6 @@ function exportClassPDF() {
     document.body.removeChild(container);
   });
 }
-}
 
 /* ==========================================================================
    SCHERM 2: DASHBOARD
