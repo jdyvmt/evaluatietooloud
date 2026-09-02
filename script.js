@@ -9,8 +9,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// Wachtwoord controleren
-function checkPassword() {
+// Wachtwoord controleren via formulier submit
+function handleLogin(event) {
+  event.preventDefault(); // Voorkom dat de pagina opnieuw ververst
   const input = document.getElementById("password-input").value;
   const errorMsg = document.getElementById("login-error");
 
@@ -39,15 +40,12 @@ function showApp() {
 
 // Schakelen tussen tabbladen
 function switchTab(tabName) {
-  // Tabs visueel bijwerken
   const tabs = document.querySelectorAll(".tab-btn");
   tabs.forEach(tab => tab.classList.remove("active"));
   
-  // Inhoud verbergen
   const contents = document.querySelectorAll(".tab-content");
   contents.forEach(content => content.classList.add("hidden"));
 
-  // Actieve tab tonen
   if (tabName === 'opdrachten') {
     document.getElementById("tab-opdrachten").classList.remove("hidden");
     tabs[0].classList.add("active");
