@@ -691,14 +691,16 @@ function exportStudentPDF() {
     evalData
   );
 
-  const htmlString = `
-    <div style="background:#ffffff;font-family:sans-serif;">
-      ${bouwPdfHtml(data)}
-    </div>
-  `;
+ const container = document.createElement("div");
 
-  html2pdf()
-    .from(htmlString)
+container.innerHTML = `
+  <div style="background:#ffffff;font-family:sans-serif;">
+    ${bouwPdfHtml(data)}
+  </div>
+`;
+
+html2pdf()
+  .from(container)
     .set({
       margin: 10,
       filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
