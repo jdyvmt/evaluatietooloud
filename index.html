@@ -12,42 +12,44 @@
   <header class="app-header">
     <h1>Evaluatietool</h1>
     <nav class="mode-switch">
-      <button id="btn-mode-eval" class="nav-btn active">Evaluatie</button>
-      <button id="btn-mode-admin" class="nav-btn">Beheer & Rubrics</button>
+      <button id="btn-view-eval" class="nav-btn active">Evaluatie</button>
+      <button id="btn-view-admin" class="nav-btn">Beheer & Opdrachten</button>
     </nav>
   </header>
 
   <!-- EVALUATIEMODUS -->
-  <main id="view-evaluation" class="view-section active">
+  <main id="view-eval" class="view-section active">
     <div class="eval-container">
       <aside class="sidebar">
-        <h2>Leerlingen</h2>
+        <h2>Selectie</h2>
         <div class="form-group">
-          <label for="select-klas">Kies klas:</label>
-          <select id="select-klas">
-            <option>4 LA</option>
-            <option>5 STW</option>
-          </select>
+          <label for="select-task-eval">Opdracht:</label>
+          <select id="select-task-eval"></select>
         </div>
+        <div class="form-group">
+          <label for="select-klas-eval">Klas:</label>
+          <select id="select-klas-eval"></select>
+        </div>
+        <h3>Leerlingen</h3>
         <ul id="student-list" class="student-list"></ul>
       </aside>
 
       <section class="eval-content">
-        <div id="eval-header" class="eval-card">
+        <div class="eval-card">
           <h2 id="current-student-name">Selecteer een leerling</h2>
-          <p id="current-task-info">Opdracht: -</p>
+          <p id="current-task-name">Opdracht: -</p>
         </div>
 
-        <div id="rubric-container" class="rubric-container"></div>
+        <div id="rubric-container"></div>
 
         <div class="eval-card">
-          <h3>Algemene Feedback</h3>
-          <textarea id="general-feedback" placeholder="De automatisch gegenereerde feedback verschijnt hier. Je kunt deze zelf nog aanvullen..."></textarea>
+          <h3>Feedback & Opmerkingen</h3>
+          <textarea id="general-feedback" placeholder="Geselecteerde feedback verschijnt hier..."></textarea>
         </div>
 
         <div class="action-bar">
-          <button id="btn-save" class="btn primary">Opslaan</button>
-          <button id="btn-pdf" class="btn secondary">Exporteer PDF</button>
+          <button id="btn-save-eval" class="btn primary">Evaluatie Opslaan</button>
+          <button id="btn-pdf-eval" class="btn secondary">Exporteer PDF</button>
         </div>
       </section>
     </div>
@@ -56,23 +58,38 @@
   <!-- BEHEERMODUS -->
   <main id="view-admin" class="view-section">
     <div class="admin-container">
-      <h2>Beheermodus</h2>
-      <p>Stel hier je criteria en de bijbehorende feedbackteksten per niveau in.</p>
-      
-      <div class="admin-card">
-        <h3>Opdracht & Criteria Bewerken</h3>
-        <div class="form-group">
-          <label for="admin-task-title">Titel Opdracht:</label>
-          <input type="text" id="admin-task-title" placeholder="Bijv. Spreken: Presentatie">
-        </div>
+      <div class="admin-sidebar">
+        <h2>Opdrachten</h2>
+        <button id="btn-new-task" class="btn primary small">+ Nieuwe Opdracht</button>
+        <ul id="admin-task-list" class="admin-list"></ul>
 
-        <div id="admin-criteria-list"></div>
-
-        <button id="btn-add-criterion" class="btn secondary">+ Criterium Toevoegen</button>
+        <h2 class="mt-4">Klassen & Leerlingen</h2>
+        <button id="btn-new-klas" class="btn secondary small">+ Nieuwe Klas</button>
+        <ul id="admin-klas-list" class="admin-list"></ul>
       </div>
 
-      <div class="action-bar">
-        <button id="btn-save-admin" class="btn primary">Wijzigingen Opslaan</button>
+      <div class="admin-editor">
+        <div id="task-editor-card" class="admin-card">
+          <h2 id="editor-title">Opdracht Bewerken</h2>
+          <div class="form-group">
+            <label for="task-title-input">Titel Opdracht:</label>
+            <input type="text" id="task-title-input" placeholder="Bijv. Spreken: Presentatie">
+          </div>
+
+          <hr class="divider">
+
+          <div class="criteria-header">
+            <h3>Criteria & Niveaus</h3>
+            <button id="btn-add-criterion" class="btn secondary small">+ Criterium Toevoegen</button>
+          </div>
+
+          <div id="criteria-editor-container"></div>
+
+          <div class="action-bar mt-4">
+            <button id="btn-save-task" class="btn primary">Opdracht Opslaan</button>
+            <button id="btn-delete-task" class="btn danger">Opdracht Verwijderen</button>
+          </div>
+        </div>
       </div>
     </div>
   </main>
