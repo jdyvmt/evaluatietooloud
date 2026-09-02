@@ -84,9 +84,9 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 .chip-btn:hover { background: #e2e8f0; color: #0f172a; }
 
 /* ADMIN EDITOR */
-.criterion-header-inputs { display: grid; grid-template-columns: 1fr 140px; gap: 1rem; }
+.criterion-header-inputs { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 1rem; }
 .criterion-editor-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; }
-.level-editor-row { display: grid; grid-template-columns: 80px 1fr 40px; gap: 0.5rem; margin-top: 0.5rem; align-items: center; }
+.level-editor-row { display: grid; grid-template-columns: 80px 180px minmax(220px, 1fr); gap: 0.5rem; margin-top: 0.5rem; align-items: center; }
 
 /* OVERZICHT & FLEX */
 .flex-gap { display: flex; gap: 0.5rem; }
@@ -141,6 +141,18 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 .student-management-row .field-group { margin-bottom: 0; }
 .student-management-row label { font-size: 0.75rem; }
 .student-management-actions { display: flex; gap: 0.5rem; align-items: center; }
+/* GEBRUIKERSBEHEER */
+.user-list-item {
+  cursor: default !important;
+  gap: 0.5rem;
+}
+.user-list-item .user-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-list-item .btn { flex-shrink: 0; }
+
 .detail-eval-header {
   display: flex;
   justify-content: space-between;
@@ -158,19 +170,18 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 
 /* PDF-preview styling (html2pdf) */
 .pdf-document {
-  width: 277mm;
-  min-height: 190mm;
-  padding: 11mm 12mm 9mm;
+  width: 186mm;
+  min-height: 273mm;
+  padding: 10mm 12mm;
   box-sizing: border-box;
+  margin: 0;
   background: #ffffff;
   color: #1e293b;
   font-family: Arial, Helvetica, sans-serif;
+  display: block;
 }
 .pdf-topline {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 20px;
+  display: block;
   border-bottom: 1.2px solid #3347a6;
   padding-bottom: 4mm;
   margin-bottom: 6mm;
@@ -180,19 +191,20 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
   font-size: 18pt;
   line-height: 1.15;
   font-weight: 800;
-  margin: 0;
-}
-.pdf-meta-right {
-  text-align: right;
-  color: #444;
-  font-size: 10.5pt;
-  line-height: 1.45;
-  white-space: nowrap;
+  margin: 0 0 2.5mm;
 }
 .pdf-student-line {
   color: #111827;
-  font-size: 11.5pt;
+  font-size: 10.8pt;
   font-weight: 700;
+  line-height: 1.4;
+  margin: 0;
+}
+.pdf-meta-right {
+  text-align: left;
+  color: #64748b;
+  font-size: 9.5pt;
+  line-height: 1.4;
   margin-top: 1.5mm;
 }
 .pdf-section-title {
@@ -220,10 +232,11 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
   padding: 3.2mm 3.5mm;
   vertical-align: middle;
   font-size: 10.2pt;
+  overflow-wrap: anywhere;
 }
-.pdf-table .pdf-param { width: 28%; color: #243aa5; font-weight: 800; }
-.pdf-table .pdf-score { width: 14%; color: #243aa5; font-weight: 800; white-space: nowrap; }
-.pdf-table .pdf-criteria { width: 58%; color: #3f3f46; font-style: italic; }
+.pdf-table .pdf-param { width: 30%; color: #243aa5; font-weight: 800; }
+.pdf-table .pdf-score { width: 20%; color: #243aa5; font-weight: 800; white-space: nowrap; }
+.pdf-table .pdf-criteria { width: 50%; color: #3f3f46; font-style: italic; }
 .pdf-feedback {
   background: #f3f1f4;
   border-radius: 4mm;
@@ -241,6 +254,7 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
   color: #171717;
   font-size: 10.5pt;
   line-height: 1.4;
+  white-space: pre-wrap;
 }
 .pdf-final-score {
   border-top: 1.2px solid #3347a6;
@@ -253,6 +267,9 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 
 @media (max-width: 800px) {
   .student-management-row { grid-template-columns: 1fr; }
+  .criterion-header-inputs { grid-template-columns: 1fr; }
+  .level-editor-row { grid-template-columns: 80px 1fr; }
+  .level-editor-row input:nth-child(3) { grid-column: 1 / -1; }
   .student-management-actions { justify-content: flex-start; }
   .eval-header-info { flex-direction: column; align-items: stretch; }
   .eval-header-right { justify-content: space-between; }
