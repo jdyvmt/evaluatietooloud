@@ -4,13 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Evaluatietool</title>
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
+  <!-- Inter Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- html2pdf.js Bibliotheek voor PDF Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
+  <!-- Inlogscherm -->
   <div id="login-screen" class="container card">
     <h1>Toegang Evaluatietool</h1>
     <p>Voer het wachtwoord in om door te gaan.</p>
@@ -21,6 +25,7 @@
     <p id="login-error" class="error-msg"></p>
   </div>
 
+  <!-- Hoofd-interface -->
   <div id="app-screen" class="container hidden">
     
     <header class="app-header">
@@ -33,6 +38,7 @@
       <button type="button" class="tab-btn" onclick="switchTab('evalueren')">Evaluatie starten</button>
     </nav>
 
+    <!-- TAB 1: Opdrachtenbeheer -->
     <section id="tab-opdrachten" class="tab-content active">
       <div class="card">
         <h2>Opgeslagen Opdrachten / Sjablonen</h2>
@@ -70,15 +76,60 @@
       </div>
     </section>
 
+    <!-- TAB 2: Evaluatiemodus -->
     <section id="tab-evalueren" class="tab-content hidden">
       <div class="card">
         <h2>Evaluatie Starten</h2>
-        <p><em>(In de volgende stap koppelen we hier de live evaluatiemodus met timer en PDF-generator aan)</em></p>
+        
+        <div class="form-group">
+          <label for="eval-assignment-select">Kies Opdracht</label>
+          <select id="eval-assignment-select" onchange="loadEvalForm()" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); font-family: var(--font-family);">
+            <option value="">-- Selecteer een opdracht --</option>
+          </select>
+        </div>
+
+        <div id="eval-form-container" class="hidden">
+          <div class="form-group" style="margin-top: 15px;">
+            <label for="student-name">Naam Leerling & Klas</label>
+            <input type="text" id="student-name" placeholder="bv. Jan Peeters - 4LA">
+          </div>
+
+          <!-- Timer Box -->
+          <div class="timer-box">
+            <div>
+              <span style="font-size: 0.85rem; font-weight: 600; color: #555;">TIMING SPREEKOPDRACHT:</span>
+              <div id="timer-display">00:00</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" id="timer-toggle-btn" onclick="toggleTimer()" class="btn-primary btn-small">Start Timer</button>
+              <button type="button" onclick="resetTimer()" class="btn-secondary btn-small">Reset</button>
+            </div>
+          </div>
+
+          <!-- Live Parameters & Waardeschaal -->
+          <div id="eval-parameters-container" style="margin-top: 20px;"></div>
+
+          <!-- Opmerkingen / Feedback -->
+          <div class="form-group" style="margin-top: 20px;">
+            <label for="eval-feedback">Algemeen Commentaar & Feedback</label>
+            <textarea id="eval-feedback" rows="4" placeholder="Typ hier je specifieke opmerkingen, werkpunten en complimenten..."></textarea>
+          </div>
+
+          <!-- Totaalscore & PDF Knop -->
+          <div class="eval-footer">
+            <div class="total-score-box">
+              Totaalscore: <span id="total-score-display">0.0</span> / <span id="max-score-display">0.0</span>
+            </div>
+            <button type="button" onclick="generatePDF()" class="btn-primary" style="font-size: 1.05rem; padding: 12px 24px;">
+              📄 Exporteer PDF Evaluatie
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
   </div>
 
-  <script src="script.js?v=3"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>
