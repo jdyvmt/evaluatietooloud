@@ -190,7 +190,7 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
   color: #243aa5;
   font-size: 18pt;
   line-height: 1.15;
-  font-weight: 800;
+  font-weight: 600;
   margin: 0 0 1.5mm;
 }
 .pdf-student-line {
@@ -198,7 +198,6 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
   font-size: 18pt;
   line-height: 1.15;
   font-weight: 800;
-  text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
   margin: 0 0 3.5mm;
