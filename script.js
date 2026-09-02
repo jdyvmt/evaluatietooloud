@@ -833,6 +833,8 @@ function renderCriteriaEditor() {
         <input type="number" value="${lvl.score}" placeholder="pt" onchange="updateLevelScore(${cIdx}, ${lIdx}, this.value)">
         <input type="text" value="${lvl.label.replace(/"/g, '&quot;')}" placeholder="Label" onchange="updateLevelLabel(${cIdx}, ${lIdx}, this.value)">
         <input type="text" value="${lvl.desc.replace(/"/g, '&quot;')}" placeholder="Omschrijving" onchange="updateLevelDesc(${cIdx}, ${lIdx}, this.value)">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moveLevel(${cIdx}, ${lIdx}, -1)" ${lIdx === 0 ? 'disabled' : ''}>▲</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moveLevel(${cIdx}, ${lIdx}, 1)" ${lIdx === c.levels.length - 1 ? 'disabled' : ''}>▼</button>
       `;
       levelsContainer.appendChild(row);
     });
@@ -1528,5 +1530,20 @@ function duplicateCriterion(cIdx) {
   editingTask.criteria.splice(cIdx + 1, 0, duplicatedCriterion);
   
   // Herteken de criteria-editor
+  renderCriteriaEditor();
+}
+function moveLevel(criterionIdx, levelIdx, direction) {
+  if (!editingTask || !editingTask.criteria[criterionIdx]) return;
+  const levels = editingTask.criteria[criterionIdx].levels;
+  const targetIdx = levelIdx + direction;
+  
+  // Controleer of de beweging binnen de grenzen valt
+  if (targetIdx < 0 || targetIdx >= levels.length) return;
+  
+  // Wissel de niveaus om in de array
+  const temp = levels[levelIdx];
+  levels[levelIdx] = levels[targetIdx];
+  levels[targetIdx] = temp;
+  
   renderCriteriaEditor();
 }
