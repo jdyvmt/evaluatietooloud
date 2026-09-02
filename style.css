@@ -170,11 +170,11 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 
 /* PDF-preview styling (html2pdf) */
 .pdf-document {
-  width: 186mm;
-  min-height: 273mm;
-  padding: 10mm 12mm;
+  width: 194mm;
+  min-height: 277mm;
+  padding: 10mm 8mm;
   box-sizing: border-box;
-  margin: 0;
+  margin: 0 auto;
   background: #ffffff;
   color: #1e293b;
   font-family: Arial, Helvetica, sans-serif;
@@ -191,21 +191,33 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
   font-size: 18pt;
   line-height: 1.15;
   font-weight: 800;
-  margin: 0 0 2.5mm;
+  margin: 0 0 1.5mm;
 }
 .pdf-student-line {
-  color: #111827;
-  font-size: 10.8pt;
-  font-weight: 700;
-  line-height: 1.4;
-  margin: 0;
+  color: #243aa5;
+  font-size: 18pt;
+  line-height: 1.15;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  margin: 0 0 3.5mm;
 }
-.pdf-meta-right {
-  text-align: left;
+.pdf-meta-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5mm 5mm;
   color: #64748b;
   font-size: 9.5pt;
   line-height: 1.4;
-  margin-top: 1.5mm;
+  text-align: center;
+}
+.pdf-meta-line span {
+  white-space: nowrap;
+}
+.pdf-meta-line strong {
+  color: #334155;
 }
 .pdf-section-title {
   color: #243aa5;
