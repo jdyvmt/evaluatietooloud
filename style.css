@@ -9,7 +9,6 @@ body { background-color: #f4f6f8; color: #333; }
 .view-section { display: none; padding: 2rem; }
 .view-section.active { display: block; }
 
-/* Evaluatiemodus Layout */
 .eval-container { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; }
 .sidebar, .eval-card, .admin-card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
 
@@ -22,14 +21,18 @@ body { background-color: #f4f6f8; color: #333; }
 .level-btn { padding: 0.5rem; border: 1px solid #ccc; background: #fff; cursor: pointer; border-radius: 4px; text-align: center; }
 .level-btn.selected { background: #28a745; color: white; border-color: #28a745; }
 
-textarea { width: 100%; height: 100px; padding: 0.5rem; margin-top: 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
+textarea { width: 100%; height: 120px; padding: 0.5rem; margin-top: 0.5rem; border: 1px solid #ccc; border-radius: 4px; line-height: 1.4; }
 .action-bar { display: flex; gap: 1rem; }
 .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
 .btn.primary { background: #0056b3; color: white; }
 .btn.secondary { background: #6c757d; color: white; }
 
-/* Admin Formulieren */
-.admin-criterion-item { background: #f8f9fa; padding: 1rem; border: 1px solid #ddd; margin-bottom: 1rem; border-radius: 4px; }
+/* Admin Niveaus Layout */
+.admin-criterion-item { background: #f8f9fa; padding: 1.25rem; border: 1px solid #ddd; margin-bottom: 1.5rem; border-radius: 6px; }
+.admin-levels-grid { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; padding-left: 0.5rem; border-left: 3px solid #0056b3; }
+.level-feedback-group { display: flex; flex-direction: column; gap: 0.25rem; }
+.level-feedback-group label { font-size: 0.85rem; color: #555; font-weight: bold; }
+.level-feedback-group input { padding: 0.4rem; border: 1px solid #ccc; border-radius: 4px; }
 .form-group { margin-bottom: 1rem; }
 .form-group label { display: block; margin-bottom: 0.25rem; font-weight: bold; }
 .form-group input { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
