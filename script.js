@@ -121,7 +121,7 @@ function checkLoginSession() {
   if (!currentUser) {
     loginOverlay.classList.add("active");
   } else {
-    loginOverlay.style.display = "none";
+    loginOverlay.classList.remove("active");
     initEvalScreen();
   }
 }
@@ -611,58 +611,110 @@ function verzamelPdfData(student, task, evaluation) {
   };
 }
 function bouwPdfHtml(data) {
+
+  let rijen = '';
+
+  data.parameters.forEach(param => {
+    rijen += `
+      <tr>
+        <td class="pdf-param">${param.naam}</td>
+        <td class="pdf-score">${param.score}</td>
+        <td class="pdf-criteria">${param.criterium}</td>
+      </tr>`;
+  });
+
   return `
-    <div style="
-      background: white;
-      color: black;
-      padding: 20px;
-      font-family: Arial, sans-serif;
-      font-size: 16px;
-      border: 2px solid red;
-    ">
-      <h1>TEST PDF</h1>
+    <div class="pdf-document">
 
-      <p><strong>Leerling:</strong> ${data.leerling}</p>
+      <div class="pdf-topline">
+        <h1 class="pdf-title">${data.titel}</h1>
 
-      <p><strong>Opdracht:</strong> ${data.titel}</p>
+        <div class="pdf-student-line">
+          ${data.leerling} &middot; ${data.klas}
+        </div>
 
-      <p><strong>Klas:</strong> ${data.klas}</p>
+        <div class="pdf-meta-line">
+          <span><strong>Datum:</strong> ${data.datum}</span>
+          <span><strong>Spreektijd:</strong> ${data.duur}</span>
+          <span>${data.leerkracht}</span>
+          <span>${data.schooljaar}</span>
+          <span>${data.school}</span>
+        </div>
+      </div>
 
-      <p><strong>Schooljaar:</strong> ${data.schooljaar}</p>
+      <h2 class="pdf-section-title">Beoordeling</h2>
 
-      <p><strong>Datum:</strong> ${data.datum}</p>
+      <table class="pdf-table">
+        <thead>
+          <tr>
+            <th class="pdf-param">Criteria</th>
+            <th class="pdf-score">Score</th>
+            <th class="pdf-criteria">Uitleg</th>
+          </tr>
+        </thead>
 
-      <p>
-        Als je deze tekst ziet vanaf pagina 1,
-        dan zit het probleem in de HTML/CSS-layout.
-      </p>
+        <tbody>
+          ${rijen}
+        </tbody>
+      </table>
+
+      <div class="pdf-feedback">
+        <div class="pdf-feedback-title">Feedback</div>
+        <div class="pdf-feedback-text">${data.feedback}</div>
+      </div>
+
+      <div class="pdf-final-score">
+        Eindscore: ${data.eindscore}
+      </div>
+
     </div>
   `;
 }
 
 function exportStudentPDF() {
 
-    const div = document.createElement("div");
+  if (!currentSelectedStudent || !currentSelectedTask) {
+    alert("Selecteer eerst een leerling en een opdracht.");
+    return;
+  }
 
-    div.innerHTML = `
-        <h1>TEST PDF</h1>
-    `;
+  const evalData = appData.evaluations.find(
+    e =>
+      e.studentId === currentSelectedStudent.id &&
+      e.taskId === currentSelectedTask.id &&
+      e.schoolYear === appData.currentSchoolYear
+  );
 
-    div.style.position = "fixed";
-    div.style.top = "0";
-    div.style.left = "0";
-    div.style.background = "white";
+  const data = verzamelPdfData(
+    currentSelectedStudent,
+    currentSelectedTask,
+    evalData
+  );
 
-    document.body.appendChild(div);
+  const htmlString = `
+    <div style="background:#ffffff;font-family:sans-serif;">
+      ${bouwPdfHtml(data)}
+    </div>
+  `;
 
-    alert(
-        "Breedte: " + div.offsetWidth +
-        "\nHoogte: " + div.offsetHeight
-    );
-
-    html2pdf()
-        .from(div)
-        .save("TEST.pdf");
+  html2pdf()
+    .from(htmlString)
+    .set({
+      margin: 10,
+      filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait"
+      }
+    })
+    .save();
 }
 function exportClassPDF() {
   const activeClass = currentSelectedClass || editingClass;
@@ -1545,7 +1597,3 @@ function moveLevel(criterionIdx, levelIdx, direction) {
   
   renderCriteriaEditor();
 }
-alert(
-    "html2pdf = " + typeof html2pdf +
-    "\nhtml2canvas = " + typeof html2canvas
-);
