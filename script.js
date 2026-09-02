@@ -739,28 +739,57 @@ function renderCriteriaEditor() {
   editingTask.criteria.forEach((c, cIdx) => {
     const box = document.createElement("div");
     box.className = "criterion-editor-box";
+    box.draggable = true;
+    box.dataset.index = cIdx;
+
+    box.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("text/plain", cIdx);
+      box.classList.add("dragging");
+    });
+
+    box.addEventListener("dragend", () => {
+      box.classList.remove("dragging");
+    });
+
+    box.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      const draggingEl = container.querySelector(".dragging");
+      const siblings = [...container.querySelectorAll(".criterion-editor-box:not(.dragging)")];
+      const nextSibling = siblings.find(sibling => {
+        const rect = sibling.getBoundingClientRect();
+        return e.clientY <= rect.top + rect.height / 2;
+      });
+      container.insertBefore(draggingEl, nextSibling);
+    });
+
+    box.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const fromIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
+      const allBoxes = [...container.querySelectorAll(".criterion-editor-box")];
+      const toIdx = allBoxes.indexOf(box);
+
+      const movedItem = editingTask.criteria.splice(fromIdx, 1)[0];
+      editingTask.criteria.splice(toIdx, 0, movedItem);
+      
+      renderCriteriaEditor();
+    });
+
     box.innerHTML = `
       <div class="criterion-header-inputs mb-2">
         <div>
           <label>Criterium Titel:</label>
-          <input type="text" value="${c.title}" onchange="updateCriterionTitle(${cIdx}, this.value)">
+          <input type="text" value="${c.title.replace(/"/g, '&quot;')}" onchange="updateCriterionTitle(${cIdx}, this.value)">
         </div>
       </div>
       <h5>Niveaus:</h5>
-<div id="levels-editor-${cIdx}"></div>
+      <div id="levels-editor-${cIdx}"></div>
 
-<div class="mt-2">
-  <button class="btn btn-sm btn-secondary" onclick="addLevelToCriterion(${cIdx})">
-    + Niveau
-  </button>
-  <button class="btn btn-sm btn-secondary" onclick="removeLevelFromCriterion(${cIdx})">
-    − Niveau
-  </button>
-</div>
+      <div class="mt-2">
+        <button type="button" class="btn btn-sm btn-secondary" onclick="addLevelToCriterion(${cIdx})">+ Niveau</button>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="removeLevelFromCriterion(${cIdx})">− Niveau</button>
+      </div>
 
-<button class="btn btn-sm btn-danger mt-2" onclick="removeCriterion(${cIdx})">
-  Verwijder Criterium
-</button>
+      <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeCriterion(${cIdx})">Verwijder Criterium</button>
     `;
     container.appendChild(box);
 
@@ -770,8 +799,8 @@ function renderCriteriaEditor() {
       row.className = "level-editor-row";
       row.innerHTML = `
         <input type="number" value="${lvl.score}" placeholder="pt" onchange="updateLevelScore(${cIdx}, ${lIdx}, this.value)">
-        <input type="text" value="${lvl.label}" placeholder="Label" onchange="updateLevelLabel(${cIdx}, ${lIdx}, this.value)">
-        <input type="text" value="${lvl.desc}" placeholder="Omschrijving" onchange="updateLevelDesc(${cIdx}, ${lIdx}, this.value)">
+        <input type="text" value="${lvl.label.replace(/"/g, '&quot;')}" placeholder="Label" onchange="updateLevelLabel(${cIdx}, ${lIdx}, this.value)">
+        <input type="text" value="${lvl.desc.replace(/"/g, '&quot;')}" placeholder="Omschrijving" onchange="updateLevelDesc(${cIdx}, ${lIdx}, this.value)">
       `;
       levelsContainer.appendChild(row);
     });
