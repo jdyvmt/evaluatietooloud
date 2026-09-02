@@ -58,7 +58,8 @@ body { background-color: #f4f6f9; color: #2c3e50; }
 /* HISTORIEK PANEL */
 .history-panel { background-color: #f0fdf4; border-color: #bbf7d0; margin-bottom: 1rem; }
 .history-panel h4 { color: #166534; margin-bottom: 0.5rem; }
-.history-item { font-size: 0.85rem; border-bottom: 1px border-dash #dcfce7; padding: 0.4rem 0; color: #14532d; }
+.history-item { font-size: 0.85rem; border-bottom: 1px dashed #dcfce7; padding: 0.4rem 0; color: #14532d; }
+.history-item:last-child { border-bottom: none; }
 
 /* FORMULIEREN */
 .field-group { margin-bottom: 1rem; }
@@ -89,7 +90,7 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 
 /* OVERZICHT & FLEX */
 .flex-gap { display: flex; gap: 0.5rem; }
-.overview-eval-row { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; font-size: 0.9rem; }
+.overview-eval-row { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; font-size: 0.9rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px; }
 .tab-buttons { display: flex; gap: 0.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; }
 
 /* SCHOOLJAAR BEHEER BOX */
