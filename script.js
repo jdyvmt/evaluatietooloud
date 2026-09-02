@@ -425,11 +425,11 @@ function renderRubrics() {
         <div class="level-desc-text">${level.desc}</div>
       `;
 
-      btn.addEventListener("click", () => {
-       currentScores[criterion.id] = {
-  levelIndex: lIdx,
-  score: level.score
-};
+     btn.addEventListener("click", () => {
+        currentScores[criterion.id] = {
+          levelIndex: lIdx,
+          score: level.score
+        };
         renderRubrics();
       });
 
@@ -449,18 +449,17 @@ function updateScoreDisplay() {
 
   if (currentSelectedTask) {
     currentSelectedTask.criteria.forEach(c => {
-     const maxLevelScore = Math.max(...c.levels.map(l => l.score), 0);
-maxTotal += maxLevelScore;
+      const maxLevelScore = Math.max(...c.levels.map(l => l.score), 0);
+      maxTotal += maxLevelScore;
 
-if (currentScores[c.id]) {
-  currentTotal += currentScores[c.id].score;
-}
+      if (currentScores[c.id]) {
+        currentTotal += currentScores[c.id].score;
+      }
     });
   }
 
   document.getElementById("eval-total-score").textContent = `${currentTotal} / ${maxTotal}`;
 }
-
 function renderPresetChips() {
   const container = document.getElementById("preset-feedback-chips");
   container.innerHTML = "";
@@ -555,16 +554,15 @@ function verzamelPdfData(student, task, evaluation) {
   let maxTotal = 0;
 
   task.criteria.forEach(c => {
-   if (sel) {
-  currentTotal += sel.score;
-}
+    const maxLevelScore = Math.max(...c.levels.map(l => l.score), 0);
+    maxTotal += maxLevelScore;
 
     const scoresObj = evaluation ? (evaluation.scores || {}) : currentScores;
     const sel = scoresObj[c.id];
     const level = sel ? c.levels[sel.levelIndex] : null;
 
     if (sel) {
-      currentTotal += (Number(sel.score) || 0) * w;
+      currentTotal += (Number(sel.score) || 0);
     }
 
     parameters.push({
@@ -590,14 +588,13 @@ function verzamelPdfData(student, task, evaluation) {
     schooljaar: evaluation ? evaluation.schoolYear : appData.currentSchoolYear,
     datum: evaluation ? evaluation.date : new Date().toLocaleDateString("nl-BE"),
     duur: durationStr,
-    leerkracht: "dhr. J. Vermote",
+    leerkracht: currentUser ? currentUser.username : "Leerkracht",
     school: "Atheneum Brugge",
     parameters: parameters,
     feedback: evaluation ? evaluation.feedback || 'Geen extra opmerkingen.' : document.getElementById("eval-general-feedback").value.trim() || 'Geen extra opmerkingen.',
     eindscore: formatScorePair(currentTotal, maxTotal)
   };
 }
-
 function bouwPdfHtml(data) {
   let rijen = '';
   data.parameters.forEach(param => {
