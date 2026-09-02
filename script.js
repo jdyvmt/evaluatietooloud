@@ -603,7 +603,7 @@ function verzamelPdfData(student, task, evaluation) {
     schooljaar: evaluation ? evaluation.schoolYear : appData.currentSchoolYear,
     datum: evaluation ? evaluation.date : new Date().toLocaleDateString("nl-BE"),
     duur: durationStr,
-    leerkracht: currentUser ? currentUser.username : "Leerkracht",
+    leerkracht: "Dhr. J. Vermote",
     school: "Atheneum Brugge",
     parameters: parameters,
     feedback: evaluation ? evaluation.feedback || 'Geen extra opmerkingen.' : (document.getElementById("eval-general-feedback")?.value.trim() || 'Geen extra opmerkingen.'),
@@ -666,13 +666,16 @@ function exportStudentPDF() {
   const evalData = appData.evaluations.find(e => e.studentId === currentSelectedStudent.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
   
-  const element = document.createElement("div");
-  element.className = "pdf-page-container";
-  element.innerHTML = bouwPdfHtml(data);
-  document.body.appendChild(element);
+  const container = document.createElement("div");
+  const pageDiv = document.createElement("div");
+  pageDiv.className = "pdf-page-container";
+  pageDiv.innerHTML = bouwPdfHtml(data);
+  container.appendChild(pageDiv);
+  
+  document.body.appendChild(container);
 
   const opt = {
-    margin: [10, 10, 10, 10],
+    margin: 10,
     filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
@@ -680,8 +683,8 @@ function exportStudentPDF() {
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
   
-  html2pdf().set(opt).from(element).save().then(() => {
-    document.body.removeChild(element);
+  html2pdf().set(opt).from(container).save().then(() => {
+    document.body.removeChild(container);
   });
 }
 
