@@ -642,19 +642,34 @@ function bouwPdfHtml(data) {
 
 function exportStudentPDF() {
 
-    alert("Start export");
-
     const div = document.createElement("div");
 
-    div.innerHTML = "<h1>TEST PDF</h1>";
+    div.innerHTML = `
+        <div style="
+            background:white;
+            color:black;
+            font-size:30px;
+            padding:40px;
+            border:5px solid red;
+        ">
+            TEST PDF
+        </div>
+    `;
 
     document.body.appendChild(div);
 
-    alert("Element toegevoegd");
+    html2canvas(div).then(canvas => {
 
-    html2pdf()
-        .from(div)
-        .save("TEST.pdf");
+        document.body.appendChild(canvas);
+
+        alert(
+            "Canvas gemaakt: "
+            + canvas.width
+            + " x "
+            + canvas.height
+        );
+
+    });
 
 }
 function exportClassPDF() {
