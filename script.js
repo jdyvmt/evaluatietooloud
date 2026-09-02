@@ -691,26 +691,27 @@ function exportStudentPDF() {
     evalData
   );
 
- const container = document.createElement("div");
-container.innerHTML = `<div style="background:#ffffff;font-family:sans-serif;">${bouwPdfHtml(data)}</div>`;
+  const container = document.createElement("div");
+  container.innerHTML = `<div style="background:#ffffff;font-family:sans-serif;">${bouwPdfHtml(data)}</div>`;
 
-// Voeg het tijdelijk toe aan de pagina
-document.body.appendChild(container);
+  // Voeg het tijdelijk toe aan de pagina
+  document.body.appendChild(container);
 
-html2pdf()
-  .from(container)
-  .set({
-    margin: 10,
-    filename: `Evaluatie.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-  })
-  .save()
-  .then(() => {
-    // Verwijder het tijdelijke element weer na de download
-    document.body.removeChild(container);
-  });
+  html2pdf()
+    .from(container)
+    .set({
+      margin: 10,
+      filename: `Evaluatie.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+    })
+    .save()
+    .then(() => {
+      // Verwijder het tijdelijke element weer na de download
+      document.body.removeChild(container);
+    });
+}
 function exportClassPDF() {
   const activeClass = currentSelectedClass || editingClass;
 
