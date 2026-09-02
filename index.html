@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Evaluatietool & Rubrics</title>
+  <title>Evaluatietool J. Vermote</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
@@ -16,7 +16,7 @@
       <p>Voer je gebruikersnaam en wachtwoord in.</p>
       <div class="field-group">
         <label for="login-username">Gebruikersnaam:</label>
-        <input type="text" id="login-username" placeholder="Bijv. jordy">
+        <input type="text" id="login-username" placeholder="Login">
       </div>
       <div class="field-group">
         <label for="login-password">Wachtwoord:</label>
@@ -38,8 +38,8 @@
     </div>
     <nav class="nav-menu">
       <button id="nav-eval" class="nav-link active">Evaluatie</button>
-      <button id="nav-dashboard" class="nav-link">Opdrachten & Rubrics</button>
-      <button id="nav-classes" class="nav-link">Klassen & Leerlingen</button>
+      <button id="nav-dashboard" class="nav-link">Opdrachten</button>
+      <button id="nav-classes" class="nav-link">Leerlingen</button>
       <button id="nav-users" class="nav-link">Gebruikers</button>
       <button id="btn-logout" class="btn btn-sm btn-danger">Uitloggen</button>
     </nav>
@@ -49,7 +49,7 @@
   <section id="screen-eval" class="app-screen active">
     <div class="layout-grid">
       <aside class="sidebar-card">
-        <h3>Selectie & Filter</h3>
+        <h3>Selectie & filter</h3>
         <div class="field-group">
           <label for="eval-task-select">Opdracht:</label>
           <select id="eval-task-select"></select>
@@ -66,7 +66,7 @@
 
         <div class="checkbox-group">
           <input type="checkbox" id="eval-filter-todo">
-          <label for="eval-filter-todo">Enkel nog te evalueren</label>
+          <label for="eval-filter-todo">Filter nog te evalueren</label>
         </div>
 
         <h3 class="mt-3">Leerlingen</h3>
@@ -78,7 +78,7 @@
           <div>
             <h2 id="eval-student-title">Selecteer een leerling</h2>
             <span id="eval-task-subtitle" class="badge">Opdracht: -</span>
-            <button id="btn-retry-eval" class="btn btn-sm btn-secondary ml-2" style="display:none;">+ Herkansing Aanmaken</button>
+            <button id="btn-retry-eval" class="btn btn-sm btn-secondary ml-2" style="display:none;">+ Herkansing</button>
           </div>
           
           <div class="eval-header-right">
@@ -102,7 +102,7 @@
 
         <!-- HISTORIEK / PROGRESSIE -->
         <div id="student-history-card" class="card-section history-panel" style="display:none;">
-          <h4>Progressie & Vorige Evaluaties</h4>
+          <h4>Vorige evaluaties</h4>
           <div id="history-content"></div>
         </div>
 
@@ -111,20 +111,20 @@
 
         <!-- VASTE FEEDBACK SNELKNOPPEN -->
         <div class="card-section mt-3">
-          <h3>Snelle Standaardopmerkingen</h3>
+          <h3>Standaardopmerkingen</h3>
           <div id="preset-feedback-chips" class="chips-container"></div>
         </div>
 
         <!-- ALGEMENE FEEDBACK -->
         <div class="card-section mt-3">
-          <h3>Algemene Feedback & Opmerkingen</h3>
+          <h3>Feedback</h3>
           <textarea id="eval-general-feedback" placeholder="Typ hier feedback of klik op de snelle opmerkingen..."></textarea>
         </div>
 
         <div class="button-bar mt-3">
-          <button id="btn-save-evaluation" class="btn btn-primary">Evaluatie Opslaan</button>
-          <button id="btn-export-pdf" class="btn btn-secondary">Exporteer deze Leerling (PDF)</button>
-          <button id="btn-export-class-pdf" class="btn btn-secondary">Exporteer hele Klas (PDF)</button>
+          <button id="btn-save-evaluation" class="btn btn-primary">Opslaan</button>
+          <button id="btn-export-pdf" class="btn btn-secondary">Exporteer LEERLING</button>
+          <button id="btn-export-class-pdf" class="btn btn-secondary">Exporteer KLAS</button>
         </div>
       </main>
     </div>
@@ -143,8 +143,8 @@
 
       <main class="main-card">
         <div class="section-header">
-          <h2>Opdracht & Rubrics Bewerken</h2>
-          <button id="btn-copy-task" class="btn btn-sm btn-secondary">Opdracht Kopiëren</button>
+          <h2>Opdracht bewerken</h2>
+          <button id="btn-copy-task" class="btn btn-sm btn-secondary">Opdracht kopiëren</button>
         </div>
         
         <div class="field-group">
@@ -160,15 +160,15 @@
         <hr class="separator">
 
         <div class="section-header">
-          <h3>Criteria & Evaluatieniveaus</h3>
-          <button id="btn-add-criterion" class="btn btn-sm btn-secondary">+ Criterium Toevoegen</button>
+          <h3>Criteria</h3>
+          <button id="btn-add-criterion" class="btn btn-sm btn-secondary">+ Criterium toevoegen</button>
         </div>
 
         <div id="editor-criteria-container"></div>
 
         <div class="button-bar mt-3">
-          <button id="btn-save-task-changes" class="btn btn-primary">Wijzigingen Opslaan</button>
-          <button id="btn-delete-task" class="btn btn-danger">Opdracht Verwijderen</button>
+          <button id="btn-save-task-changes" class="btn btn-primary">Opslaan</button>
+          <button id="btn-delete-task" class="btn btn-danger">Verwijderen</button>
         </div>
       </main>
     </div>
@@ -187,25 +187,25 @@
         <hr class="separator">
 
         <div class="schoolyear-box">
-          <h4>Schooljaar Beheren</h4>
+          <h4>Schooljaar beheren</h4>
           <p>Start een nieuw schooljaar om over te stappen naar nieuwe klassen met behoud van de historiek.</p>
-          <button id="btn-new-schoolyear" class="btn btn-sm btn-secondary mt-2">Nieuw Schooljaar Starten</button>
+          <button id="btn-new-schoolyear" class="btn btn-sm btn-secondary mt-2">Nieuw schooljaar starten</button>
         </div>
       </aside>
 
       <main class="main-card">
         <div class="tab-buttons mb-3">
-          <button id="tab-btn-class-edit" class="btn btn-sm btn-primary">Klas Bewerken</button>
-          <button id="tab-btn-class-overview" class="btn btn-sm btn-secondary">Resultaten & PDF Overzicht</button>
-          <button id="tab-btn-student-detail" class="btn btn-sm btn-secondary">Leerling Detailoverzicht</button>
+          <button id="tab-btn-class-edit" class="btn btn-sm btn-primary">Klas bewerken</button>
+          <button id="tab-btn-class-overview" class="btn btn-sm btn-secondary">Resultatenoverzicht</button>
+          <button id="tab-btn-student-detail" class="btn btn-sm btn-secondary">Detailoverzicht leerlingen</button>
         </div>
 
         <!-- SUB-TAB 1: BEWERKEN -->
         <div id="tab-content-class-edit">
-          <h2>Klas & Leerlingen Beheren</h2>
+          <h2>Klas & leerlingen beheren</h2>
           <div class="field-group">
             <label for="class-name-input">Klasnaam:</label>
-            <input type="text" id="class-name-input" placeholder="Bijv. 4 LA">
+            <input type="text" id="class-name-input" placeholder="Bijv. 4 LATI 0">
           </div>
 
           <hr class="separator">
@@ -227,36 +227,36 @@
           </div>
 
           <div class="button-bar mt-3">
-            <button id="btn-save-class-changes" class="btn btn-primary">Klas Opslaan</button>
-            <button id="btn-delete-class" class="btn btn-danger">Klas Verwijderen</button>
+            <button id="btn-save-class-changes" class="btn btn-primary">Klas opslaan</button>
+            <button id="btn-delete-class" class="btn btn-danger">Klas verwijderen</button>
           </div>
         </div>
 
         <!-- SUB-TAB 2: OVERZICHT & PDF DOWNLOADS -->
         <div id="tab-content-class-overview" style="display:none;">
-          <h2>Overzicht Evaluaties & PDF Download</h2>
+          <h2>Overzicht evaluaties</h2>
           <div class="field-group mt-3">
-            <label for="overview-task-select">Selecteer Opdracht voor Bulk Klas PDF:</label>
+            <label for="overview-task-select">Selecteer opdracht voor klas-pdf:</label>
             <div class="flex-gap">
               <select id="overview-task-select"></select>
-              <button id="btn-download-overview-class-pdf" class="btn btn-secondary">Download Klas PDF</button>
+              <button id="btn-download-overview-class-pdf" class="btn btn-secondary">Download klas-pdf</button>
             </div>
           </div>
           <hr class="separator">
-          <h3>Resultaten per Leerling</h3>
+          <h3>Resultaten per leerling</h3>
           <div id="class-students-overview-list" class="mt-3"></div>
         </div>
 
         <!-- SUB-TAB 3: LEERLING DETAILOVERZICHT -->
         <div id="tab-content-student-detail" style="display:none;">
-          <h2>Gedetailleerd Leerlingoverzicht Evaluaties</h2>
+          <h2>Gedetailleerd leerlingoverzicht</h2>
           <div class="field-group mt-3">
-            <label for="detail-student-select">Selecteer Leerling:</label>
+            <label for="detail-student-select">Selecteer leerling:</label>
             <select id="detail-student-select"></select>
           </div>
           <hr class="separator">
           <div id="student-detail-content" class="mt-3">
-            <p class="text-muted">Selecteer een leerling om alle ingevulde evaluaties, scores en feedback in te zien.</p>
+            <p class="text-muted">Selecteer een leerling om alle ingevulde evaluaties, scores en feedback te zien.</p>
           </div>
         </div>
       </main>
@@ -275,26 +275,26 @@
         <h2>Gebruikers</h2>
 
         <div class="card-section mt-3">
-          <h3>Nieuwe Gebruiker Toevoegen</h3>
+          <h3>Nieuwe gebruiker</h3>
           <div class="field-group mt-2">
             <label for="new-username">Gebruikersnaam:</label>
-            <input type="text" id="new-username" placeholder="Bijv. collega_jan">
+            <input type="text" id="new-username" placeholder="Bijv. a.janssens">
           </div>
           <div class="field-group">
             <label for="new-password">Wachtwoord:</label>
             <input type="password" id="new-password" placeholder="Wachtwoord">
           </div>
-          <button id="btn-add-user" class="btn btn-primary">Gebruiker Aanmaken</button>
+          <button id="btn-add-user" class="btn btn-primary">Gebruiker aanmaken</button>
         </div>
 
         <div class="card-section mt-3">
-          <h3>Wachtwoord van Ingelogde Gebruiker Wijzigen</h3>
+          <h3>Wachtwoord van huidige gebruiker wijzigen</h3>
           <p id="current-logged-user" class="text-muted mb-2"></p>
           <div class="field-group">
-            <label for="change-password-input">Nieuw Wachtwoord:</label>
+            <label for="change-password-input">Nieuw wachtwoord:</label>
             <input type="password" id="change-password-input" placeholder="Nieuw wachtwoord ingeven">
           </div>
-          <button id="btn-change-password" class="btn btn-primary">Wachtwoord Opslaan</button>
+          <button id="btn-change-password" class="btn btn-primary">Wachtwoord opslaan</button>
         </div>
       </main>
     </div>
