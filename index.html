@@ -3,70 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Evaluatietool - Beoordelingsscherm</title>
+  <title>Evaluatietool</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Bibliotheek voor PDF-generatie -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
-  <!-- Bovenbalk -->
-  <header class="topbar">
-    <div class="context-info">
-      <span class="badge" id="klas-badge">4 Latijn</span>
-      <h2 id="opdracht-titel">Opdracht: Uiteenzetting Structuur & Taal</h2>
-    </div>
-    <div class="topbar-actions">
-      <label>
-        <input type="checkbox" id="filter-uncompleted"> Enkel onvolbrachte leerlingen
-      </label>
-      <button class="btn-secondary" id="btn-export-pdf" onclick="exporteerKlasPDF('K-4LA', 'OPD-01')">📄 Exporteer Klas-PDF</button>
-    </div>
+  <header class="app-header">
+    <h1>Evaluatietool</h1>
+    <nav class="mode-switch">
+      <button id="btn-mode-eval" class="nav-btn active">Evaluatie</button>
+      <button id="btn-mode-admin" class="nav-btn">Beheer & Rubrics</button>
+    </nav>
   </header>
 
-  <!-- Hoofdgrid: 3 Kolommen -->
-  <main class="eval-grid">
+  <!-- EVALUATIEMODUS -->
+  <main id="view-evaluation" class="view-section active">
+    <div class="eval-container">
+      <aside class="sidebar">
+        <h2>Leerlingen</h2>
+        <div class="form-group">
+          <label for="select-klas">Kies klas:</label>
+          <select id="select-klas"></select>
+        </div>
+        <ul id="student-list" class="student-list"></ul>
+      </aside>
 
-    <!-- Kolom 1: Leerling & Historiek -->
-    <aside class="panel history-panel">
-      <h3>Leerling & Progressie</h3>
-      
-      <div class="form-group">
-        <label for="student-select">Selecteer leerling:</label>
-        <select id="student-select"></select>
-      </div>
+      <section class="eval-content">
+        <div id="eval-header" class="eval-card">
+          <h2 id="current-student-name">Selecteer een leerling</h2>
+          <p id="current-task-info">Opdracht: -</p>
+        </div>
 
-      <div class="history-card" id="history-container">
-        <!-- Historiek wordt hier dynamisch ingeladen -->
-      </div>
-    </aside>
+        <div id="rubric-container" class="rubric-container"></div>
 
-    <!-- Kolom 2: Criteria & Rubrics -->
-    <section class="panel criteria-panel" id="criteria-container">
-      <h3>Criteria</h3>
-      <!-- Criteria en niveaus worden hier dynamisch ingeladen -->
-    </section>
+        <div class="eval-card">
+          <h3>Algemene Feedback</h3>
+          <textarea id="general-feedback" placeholder="Typ hier algemene opmerkingen..."></textarea>
+        </div>
 
-    <!-- Kolom 3: Feedback & Acties -->
-    <aside class="panel feedback-panel">
-      <h3>Snel-feedback</h3>
-
-      <div class="quick-feedback-list" id="quick-feedback-container">
-        <!-- Vinkjes worden hier dynamisch ingeladen -->
-      </div>
-
-      <div class="form-group margin-top">
-        <label for="free-feedback">Vrije feedback:</label>
-        <textarea id="free-feedback" rows="4" placeholder="Typ hier specifieke opmerkingen..."></textarea>
-      </div>
-
-      <div class="action-footer">
-        <button class="btn-primary" id="btn-save">Opslaan & Volgende (→)</button>
-      </div>
-    </aside>
-
+        <div class="action-bar">
+          <button id="btn-save" class="btn primary">Opslaan</button>
+          <button id="btn-pdf" class="btn secondary">Exporteer PDF</button>
+        </div>
+      </section>
+    </div>
   </main>
 
-  <script src="app.js"></script>
+  <!-- BEHEERMODUS -->
+  <main id="view-admin" class="view-section">
+    <div class="admin-container">
+      <h2>Beheermodus</h2>
+      <p>Pas hier je opdrachten, criteria en niveaus aan.</p>
+      
+      <div class="admin-card">
+        <h3>Opdracht & Criteria Bewerken</h3>
+        <div class="form-group">
+          <label for="admin-task-title">Titel Opdracht:</label>
+          <input type="text" id="admin-task-title" placeholder="Bijv. Spreken: Presentatie">
+        </div>
+
+        <div id="admin-criteria-list"></div>
+
+        <button id="btn-add-criterion" class="btn secondary">+ Criterium Toevoegen</button>
+      </div>
+
+      <div class="action-bar">
+        <button id="btn-save-admin" class="btn primary">Wijzigingen Opslaan</button>
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
 </body>
 </html>
