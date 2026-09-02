@@ -642,16 +642,14 @@ function bouwPdfHtml(data) {
 
 function exportStudentPDF() {
 
-  const testDiv = document.createElement("div");
+    console.log("START PDF");
 
-  testDiv.innerHTML = `
-    <h1>TEST PDF</h1>
-    <p>Werkt dit?</p>
-  `;
+    const div = document.createElement("div");
+    div.innerHTML = "<h1>TEST PDF</h1>";
 
-  document.body.appendChild(testDiv);
+    document.body.appendChild(div);
 
-  html2pdf(testDiv);
+    html2pdf(div);
 
 }
 function exportClassPDF() {
