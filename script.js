@@ -673,15 +673,18 @@ function exportStudentPDF() {
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
   
   const container = document.createElement("div");
-  // Geef de container een vaste breedte en zorg dat hij buiten beeld staat
-  container.style.position = "absolute";
-  container.style.left = "-9999px";
+  container.style.position = "fixed";
   container.style.top = "0";
+  container.style.left = "0";
+  container.style.opacity = "0";
+  container.style.pointerEvents = "none";
   container.style.width = "210mm";
   container.style.backgroundColor = "#ffffff";
 
   const pageDiv = document.createElement("div");
   pageDiv.className = "pdf-page-container";
+  pageDiv.style.width = "210mm";
+  pageDiv.style.boxSizing = "border-box";
   pageDiv.innerHTML = bouwPdfHtml(data);
   container.appendChild(pageDiv);
   
@@ -691,7 +694,7 @@ function exportStudentPDF() {
     margin: [10, 10, 10, 10],
     filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 800 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
   
@@ -708,10 +711,11 @@ function exportClassPDF() {
   }
 
   const container = document.createElement("div");
-  // Geef ook hier de container een vaste breedte en positionering
-  container.style.position = "absolute";
-  container.style.left = "-9999px";
+  container.style.position = "fixed";
   container.style.top = "0";
+  container.style.left = "0";
+  container.style.opacity = "0";
+  container.style.pointerEvents = "none";
   container.style.width = "210mm";
   container.style.backgroundColor = "#ffffff";
 
@@ -725,6 +729,8 @@ function exportClassPDF() {
     
     const pageDiv = document.createElement("div");
     pageDiv.className = "pdf-page-container";
+    pageDiv.style.width = "210mm";
+    pageDiv.style.boxSizing = "border-box";
     pageDiv.innerHTML = bouwPdfHtml(data);
     
     if (index < activeClass.students.length - 1) {
@@ -740,7 +746,7 @@ function exportClassPDF() {
     margin: [10, 10, 10, 10],
     filename: `Klas_Evaluatie_${activeClass.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 800 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
     pagebreak: { mode: ['css', 'legacy'] },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
