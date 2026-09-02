@@ -1,846 +1,1042 @@
-// Datamodel met ondersteuning voor meerdere gebruikers, kopiëren van opdrachten en historiek-PDFs
-const DEFAULT_APP_STATE = {
-  users: [
-    { username: "jordy", password: "leerkracht123" }
-  ],
+/* ==========================================================================
+   DATAMODEL & INITIALISATIE
+   ========================================================================== */
+
+const STORAGE_KEY = "evaluatietool_app_data_v2";
+
+let appData = {
   currentSchoolYear: "2025-2026",
-  tasks: [
-    {
-      id: "task-demo-1",
-      title: "Spreken: Presentatie",
-      presetFeedback: ["Duidelijke uitspraak", "Te snel gesproken", "Mooi visueel materiaal", "Let op lichaamshouding"],
-      criteria: [
-        {
-          id: "crit-1",
-          title: "Inhoud & Opbouw",
-          maxScore: 10,
-          levels: [
-            { score: 3, text: "Inhoud is onvolledig en mist duidelijke structuur." },
-            { score: 7, text: "Inhoud is basaal, de structuur is voldoende logisch." },
-            { score: 10, text: "Grondige inhoud met een zeer heldere opbouw." }
-          ]
-        },
-        {
-          id: "crit-2",
-          title: "Lichaamstaal & Oogcontact",
-          maxScore: 5,
-          levels: [
-            { score: 1, text: "Weinig oogcontact en een gesloten houding." },
-            { score: 3, text: "Voldoende oogcontact, rustige houding." },
-            { score: 5, text: "Zeer overtuigend en natuurlijk oogcontact." }
-          ]
-        }
-      ]
-    }
+  users: [
+    { id: "u1", username: "jordy", password: "password123" }
   ],
-  classes: [
-    { id: "class-demo-1", year: "2025-2026", name: "4 LA", students: ["Jan Peeters", "Sophie Devos", "Lucas Janssens"] }
-  ],
+  tasks: [],
+  classes: [],
   evaluations: []
 };
 
-// State variabelen
-let appData = JSON.parse(localStorage.getItem('evalToolData_v3')) || DEFAULT_APP_STATE;
+// Sessiestatus
 let currentUser = null;
+let currentSelectedTask = null;
+let currentSelectedClass = null;
+let currentSelectedStudent = null;
+let currentScores = {}; // Key: criterionId, Value: { levelIndex, score, weight }
 
-let selectedTaskId = appData.tasks[0]?.id || null;
-let selectedClassId = appData.classes.find(c => c.year === appData.currentSchoolYear)?.id || null;
-let selectedStudent = null;
-let currentAttempt = 1;
-let currentScores = {};
-
-let editingTaskId = null;
-let editingClassId = null;
-
-// Timer variabelen
+// Timer Status
 let timerInterval = null;
 let timerSeconds = 0;
 let isTimerRunning = false;
 
-function saveToStorage() {
-  localStorage.setItem('evalToolData_v3', JSON.stringify(appData));
-}
+/* ==========================================================================
+   OPSLAG & LAAD LOGICA (localStorage)
+   ========================================================================== */
 
-// INLOGGEN & SESSIE
-document.getElementById('btn-login').onclick = handleLogin;
-document.getElementById('login-password').onkeyup = (e) => { if (e.key === 'Enter') handleLogin(); };
-
-function handleLogin() {
-  const uInput = document.getElementById('login-username').value.trim();
-  const pInput = document.getElementById('login-password').value.trim();
-
-  const foundUser = appData.users.find(u => u.username.toLowerCase() === uInput.toLowerCase() && u.password === pInput);
-
-  if (foundUser) {
-    currentUser = foundUser;
-    document.getElementById('screen-login').classList.remove('active');
-    document.getElementById('current-year-badge').innerText = `Schooljaar: ${appData.currentSchoolYear}`;
-    switchScreen('eval');
+function loadData() {
+  const savedData = localStorage.getItem(STORAGE_KEY);
+  if (savedData) {
+    try {
+      appData = JSON.parse(savedData);
+    } catch (e) {
+      console.error("Fout bij laden van data:", e);
+      seedDefaultData();
+    }
   } else {
-    document.getElementById('login-error').innerText = 'Ongeldige gebruikersnaam of wachtwoord!';
+    seedDefaultData();
   }
 }
 
-document.getElementById('btn-logout').onclick = () => {
-  currentUser = null;
-  document.getElementById('login-username').value = '';
-  document.getElementById('login-password').value = '';
-  document.getElementById('screen-login').classList.add('active');
-};
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+}
 
-// NAVIGATIE
-const screens = {
-  eval: document.getElementById('screen-eval'),
-  dashboard: document.getElementById('screen-dashboard'),
-  classes: document.getElementById('screen-classes'),
-  users: document.getElementById('screen-users')
-};
+function seedDefaultData() {
+  appData = {
+    currentSchoolYear: "2025-2026",
+    users: [
+      { id: "u1", username: "jordy", password: "password123" }
+    ],
+    tasks: [
+      {
+        id: "t1",
+        title: "Spreken: Presentatie",
+        presets: ["Duidelijke uitspraak", "Mooi oogcontact", "Let op spreektempo", "Lichaamstaal kan actiever"],
+        criteria: [
+          {
+            id: "c1",
+            title: "Inhoud & Opbouw",
+            weight: 2,
+            levels: [
+              { label: "Onvoldoende", score: 2, desc: "Onvolledige structuur, mist rode draad." },
+              { label: "Voldoende", score: 6, desc: "Logische opbouw, basiselementen aanwezig." },
+              { label: "Goed", score: 8, desc: "Sterke structuur en goed onderbouwd." },
+              { label: "Zeer Goed", score: 10, desc: "Uitzonderlijk helder, boeiend en volledig." }
+            ]
+          },
+          {
+            id: "c2",
+            title: "Taalgebruik & Stem",
+            weight: 1,
+            levels: [
+              { label: "Onvoldoende", score: 2, desc: "Veel spreektaal of onduidelijke articulatie." },
+              { label: "Voldoende", score: 6, desc: "Verstaanbaar, verzorgd Nederlands." },
+              { label: "Goed", score: 8, desc: "Rijk taalgebruik, gevarieerde intonatie." },
+              { label: "Zeer Goed", score: 10, desc: "Foutloos, zeer dynamisch en professioneel." }
+            ]
+          }
+        ]
+      }
+    ],
+    classes: [
+      {
+        id: "k1",
+        name: "4 LA",
+        schoolYear: "2025-2026",
+        students: [
+          { id: "s1", name: "Jan Peeters" },
+          { id: "s2", name: "Sophie Devos" },
+          { id: "s3", name: "Lucas Janssens" }
+        ]
+      }
+    ],
+    evaluations: []
+  };
+  saveData();
+}
 
-const navLinks = {
-  eval: document.getElementById('nav-eval'),
-  dashboard: document.getElementById('nav-dashboard'),
-  classes: document.getElementById('nav-classes'),
-  users: document.getElementById('nav-users')
-};
+/* ==========================================================================
+   INITIALISATIE VAN DE APPLICATIE
+   ========================================================================== */
 
-function switchScreen(targetScreen) {
-  if (!currentUser) return;
-  Object.keys(screens).forEach(key => {
-    screens[key].classList.toggle('active', key === targetScreen);
-    navLinks[key].classList.toggle('active', key === targetScreen);
+document.addEventListener("DOMContentLoaded", () => {
+  loadData();
+  setupEventListeners();
+  updateSchoolYearBadge();
+  checkLoginSession();
+});
+
+function updateSchoolYearBadge() {
+  const badge = document.getElementById("current-year-badge");
+  if (badge) badge.textContent = `Schooljaar: ${appData.currentSchoolYear}`;
+}
+
+function checkLoginSession() {
+  const loginOverlay = document.getElementById("screen-login");
+  if (!currentUser) {
+    loginOverlay.classList.add("active");
+  } else {
+    loginOverlay.classList.remove("active");
+    initEvalScreen();
+  }
+}
+
+/* ==========================================================================
+   EVENT LISTENERS & NAVIGATIE
+   ========================================================================== */
+
+function setupEventListeners() {
+  // Inloggen & Uitloggen
+  document.getElementById("btn-login").addEventListener("click", handleLogin);
+  document.getElementById("btn-logout").addEventListener("click", handleLogout);
+
+  // Navigatietabs
+  document.getElementById("nav-eval").addEventListener("click", () => switchScreen("screen-eval"));
+  document.getElementById("nav-dashboard").addEventListener("click", () => switchScreen("screen-dashboard"));
+  document.getElementById("nav-classes").addEventListener("click", () => switchScreen("screen-classes"));
+  document.getElementById("nav-users").addEventListener("click", () => switchScreen("screen-users"));
+
+  // Evaluatiescherm Selecties & Filters
+  document.getElementById("eval-task-select").addEventListener("change", (e) => {
+    currentSelectedTask = appData.tasks.find(t => t.id === e.target.value) || null;
+    renderStudentList();
+    renderRubrics();
+    renderPresetChips();
   });
 
-  if (targetScreen === 'eval') initEvalScreen();
-  if (targetScreen === 'dashboard') initDashboardScreen();
-  if (targetScreen === 'classes') initClassesScreen();
-  if (targetScreen === 'users') initUsersScreen();
+  document.getElementById("eval-class-select").addEventListener("change", (e) => {
+    currentSelectedClass = appData.classes.find(c => c.id === e.target.value) || null;
+    renderStudentList();
+  });
+
+  document.getElementById("eval-student-search").addEventListener("input", renderStudentList);
+  document.getElementById("eval-filter-todo").addEventListener("change", renderStudentList);
+
+  // Evaluatie Acties
+  document.getElementById("btn-save-evaluation").addEventListener("click", saveCurrentEvaluation);
+  document.getElementById("btn-retry-eval").addEventListener("click", startRetryEvaluation);
+  document.getElementById("btn-export-pdf").addEventListener("click", exportStudentPDF);
+  document.getElementById("btn-export-class-pdf").addEventListener("click", exportClassPDF);
+
+  // Timer Knopen
+  document.getElementById("btn-timer-toggle").addEventListener("click", toggleTimer);
+  document.getElementById("btn-timer-reset").addEventListener("click", resetTimer);
+
+  // Dashboard (Opdrachten) Acties
+  document.getElementById("btn-add-task").addEventListener("click", createNewTask);
+  document.getElementById("btn-copy-task").addEventListener("click", copyCurrentTask);
+  document.getElementById("btn-save-task-changes").addEventListener("click", saveTaskChanges);
+  document.getElementById("btn-delete-task").addEventListener("click", deleteTask);
+  document.getElementById("btn-add-criterion").addEventListener("click", addCriterionToEditor);
+
+  // Klassenbeheer Acties
+  document.getElementById("btn-add-class").addEventListener("click", createNewClass);
+  document.getElementById("btn-save-class-changes").addEventListener("click", saveClassChanges);
+  document.getElementById("btn-delete-class").addEventListener("click", deleteClass);
+  document.getElementById("btn-new-schoolyear").addEventListener("click", startNewSchoolYear);
+
+  // Klassenbeheer Sub-tabs
+  document.getElementById("tab-btn-class-edit").addEventListener("click", () => switchClassSubTab("edit"));
+  document.getElementById("tab-btn-class-overview").addEventListener("click", () => switchClassSubTab("overview"));
+  document.getElementById("btn-download-overview-class-pdf").addEventListener("click", exportOverviewClassPDF);
+
+  // Gebruikersbeheer Acties
+  document.getElementById("btn-add-user").addEventListener("click", createNewUser);
+  document.getElementById("btn-change-password").addEventListener("click", changePassword);
 }
 
-navLinks.eval.onclick = () => switchScreen('eval');
-navLinks.dashboard.onclick = () => switchScreen('dashboard');
-navLinks.classes.onclick = () => switchScreen('classes');
-navLinks.users.onclick = () => switchScreen('users');
+function switchScreen(screenId) {
+  document.querySelectorAll(".app-screen").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
 
-// TIMER FUNCTIONALITEIT
-function formatTime(seconds) {
-  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-  const s = (seconds % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
+  document.getElementById(screenId).classList.add("active");
+
+  if (screenId === "screen-eval") {
+    document.getElementById("nav-eval").classList.add("active");
+    initEvalScreen();
+  } else if (screenId === "screen-dashboard") {
+    document.getElementById("nav-dashboard").classList.add("active");
+    initDashboardScreen();
+  } else if (screenId === "screen-classes") {
+    document.getElementById("nav-classes").classList.add("active");
+    initClassesScreen();
+  } else if (screenId === "screen-users") {
+    document.getElementById("nav-users").classList.add("active");
+    initUsersScreen();
+  }
 }
 
-function updateTimerDisplay() {
-  const display = document.getElementById('timer-display');
-  if (display) display.innerText = formatTime(timerSeconds);
+/* ==========================================================================
+   AUTHENTICATIE & GEBRUIKERS
+   ========================================================================== */
+
+function handleLogin() {
+  const userIn = document.getElementById("login-username").value.trim();
+  const passIn = document.getElementById("login-password").value.trim();
+  const errorEl = document.getElementById("login-error");
+
+  const found = appData.users.find(u => u.username.toLowerCase() === userIn.toLowerCase() && u.password === passIn);
+
+  if (found) {
+    currentUser = found;
+    errorEl.textContent = "";
+    document.getElementById("login-username").value = "";
+    document.getElementById("login-password").value = "";
+    checkLoginSession();
+  } else {
+    errorEl.textContent = "Ongeldige gebruikersnaam of wachtwoord.";
+  }
 }
 
-function startTimer() {
-  if (isTimerRunning) return;
-  isTimerRunning = true;
-  document.getElementById('btn-timer-toggle').innerText = 'Pauze';
-  document.getElementById('btn-timer-toggle').classList.replace('btn-primary', 'btn-danger');
-  
-  timerInterval = setInterval(() => {
-    timerSeconds++;
-    updateTimerDisplay();
-  }, 1000);
+function handleLogout() {
+  currentUser = null;
+  resetTimer();
+  checkLoginSession();
 }
 
-function stopTimer() {
-  isTimerRunning = false;
-  clearInterval(timerInterval);
-  const btn = document.getElementById('btn-timer-toggle');
-  if (btn) {
-    btn.innerText = 'Start';
-    btn.classList.replace('btn-danger', 'btn-primary');
+/* ==========================================================================
+   TIMER FUNCTIONALITEIT
+   ========================================================================== */
+
+function toggleTimer() {
+  const btn = document.getElementById("btn-timer-toggle");
+  if (isTimerRunning) {
+    clearInterval(timerInterval);
+    isTimerRunning = false;
+    btn.textContent = "Start";
+    btn.classList.replace("btn-danger", "btn-primary");
+  } else {
+    isTimerRunning = true;
+    btn.textContent = "Pauze";
+    btn.classList.replace("btn-primary", "btn-danger");
+    timerInterval = setInterval(() => {
+      timerSeconds++;
+      updateTimerDisplay();
+    }, 1000);
   }
 }
 
 function resetTimer() {
-  stopTimer();
+  clearInterval(timerInterval);
+  isTimerRunning = false;
   timerSeconds = 0;
   updateTimerDisplay();
+  const btn = document.getElementById("btn-timer-toggle");
+  if (btn) {
+    btn.textContent = "Start";
+    btn.classList.replace("btn-danger", "btn-primary");
+  }
 }
 
-document.getElementById('btn-timer-toggle').onclick = () => {
-  if (isTimerRunning) stopTimer(); else startTimer();
-};
-document.getElementById('btn-timer-reset').onclick = resetTimer;
+function updateTimerDisplay() {
+  const mins = Math.floor(timerSeconds / 60).toString().padStart(2, "0");
+  const secs = (timerSeconds % 60).toString().padStart(2, "0");
+  const display = document.getElementById("timer-display");
+  if (display) display.textContent = `${mins}:${secs}`;
+}
 
-// SCHERM 1: EVALUATIE
+/* ==========================================================================
+   SCHERM 1: EVALUATIEMODUS
+   ========================================================================== */
+
 function initEvalScreen() {
-  const taskSelect = document.getElementById('eval-task-select');
-  const classSelect = document.getElementById('eval-class-select');
+  populateTaskSelect("eval-task-select");
+  populateClassSelect("eval-class-select");
 
-  taskSelect.innerHTML = appData.tasks.map(t => `<option value="${t.id}">${t.title}</option>`).join('');
-  
-  const currentYearClasses = appData.classes.filter(c => c.year === appData.currentSchoolYear);
-  classSelect.innerHTML = currentYearClasses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-
-  if (selectedTaskId && appData.tasks.some(t => t.id === selectedTaskId)) {
-    taskSelect.value = selectedTaskId;
-  } else if (appData.tasks[0]) {
-    selectedTaskId = appData.tasks[0].id;
+  if (appData.tasks.length > 0 && !currentSelectedTask) {
+    currentSelectedTask = appData.tasks[0];
+  }
+  if (appData.classes.length > 0 && !currentSelectedClass) {
+    const currentClasses = appData.classes.filter(c => c.schoolYear === appData.currentSchoolYear);
+    if (currentClasses.length > 0) currentSelectedClass = currentClasses[0];
   }
 
-  if (selectedClassId && currentYearClasses.some(c => c.id === selectedClassId)) {
-    classSelect.value = selectedClassId;
-  } else if (currentYearClasses[0]) {
-    selectedClassId = currentYearClasses[0].id;
-  }
+  if (currentSelectedTask) document.getElementById("eval-task-select").value = currentSelectedTask.id;
+  if (currentSelectedClass) document.getElementById("eval-class-select").value = currentSelectedClass.id;
 
-  taskSelect.onchange = (e) => { selectedTaskId = e.target.value; renderStudents(); renderRubrics(); renderPresetChips(); };
-  classSelect.onchange = (e) => { selectedClassId = e.target.value; renderStudents(); };
-
-  document.getElementById('eval-student-search').oninput = renderStudents;
-  document.getElementById('eval-filter-todo').onchange = renderStudents;
-
-  renderStudents();
+  renderStudentList();
   renderRubrics();
   renderPresetChips();
 }
 
-function renderStudents() {
-  const currentClass = appData.classes.find(c => c.id === selectedClassId);
-  const list = document.getElementById('eval-student-list');
-  list.innerHTML = '';
+function populateTaskSelect(elementId) {
+  const select = document.getElementById(elementId);
+  if (!select) return;
+  select.innerHTML = "";
+  appData.tasks.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = t.title;
+    select.appendChild(opt);
+  });
+}
 
-  if (!currentClass || currentClass.students.length === 0) {
-    list.innerHTML = '<li>Geen leerlingen gevonden</li>';
-    return;
-  }
+function populateClassSelect(elementId) {
+  const select = document.getElementById(elementId);
+  if (!select) return;
+  select.innerHTML = "";
+  const currentClasses = appData.classes.filter(c => c.schoolYear === appData.currentSchoolYear);
+  currentClasses.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.id;
+    opt.textContent = c.name;
+    select.appendChild(opt);
+  });
+}
 
-  const searchQuery = document.getElementById('eval-student-search').value.toLowerCase();
-  const filterTodo = document.getElementById('eval-filter-todo').checked;
+function renderStudentList() {
+  const ul = document.getElementById("eval-student-list");
+  ul.innerHTML = "";
 
-  let filteredStudents = currentClass.students.filter(s => s.toLowerCase().includes(searchQuery));
+  if (!currentSelectedClass || !currentSelectedTask) return;
 
-  if (filterTodo) {
-    filteredStudents = filteredStudents.filter(student => {
-      const hasEval = appData.evaluations.some(e => 
-        e.taskId === selectedTaskId && 
-        e.studentName === student && 
-        e.schoolYear === appData.currentSchoolYear
-      );
-      return !hasEval;
-    });
-  }
+  const searchQuery = document.getElementById("eval-student-search").value.toLowerCase();
+  const filterTodo = document.getElementById("eval-filter-todo").checked;
 
-  if (filteredStudents.length === 0) {
-    list.innerHTML = '<li>Geen resultaten</li>';
-    return;
-  }
+  const students = currentSelectedClass.students || [];
 
-  if (!filteredStudents.includes(selectedStudent)) {
-    selectedStudent = filteredStudents[0];
-    currentAttempt = 1;
-  }
+  students.forEach(student => {
+    if (searchQuery && !student.name.toLowerCase().includes(searchQuery)) return;
 
-  filteredStudents.forEach(student => {
-    const li = document.createElement('li');
-    const studentEvals = appData.evaluations.filter(e => 
-      e.taskId === selectedTaskId && 
-      e.studentName === student && 
+    const hasEval = appData.evaluations.some(e => 
+      e.studentId === student.id && 
+      e.taskId === currentSelectedTask.id && 
       e.schoolYear === appData.currentSchoolYear
     );
 
-    const isDone = studentEvals.length > 0;
-    li.innerHTML = `<span>${student}</span> ${isDone ? '<span class="status-done">✓</span>' : ''}`;
-    
-    if (student === selectedStudent) li.classList.add('active');
-    
-    li.onclick = () => {
-      selectedStudent = student;
-      currentAttempt = 1;
-      renderStudents();
-      loadStudentEvaluation();
-    };
-    list.appendChild(li);
-  });
+    if (filterTodo && hasEval) return;
 
-  loadStudentEvaluation();
+    const li = document.createElement("li");
+    if (currentSelectedStudent && currentSelectedStudent.id === student.id) {
+      li.classList.add("active");
+    }
+
+    li.innerHTML = `
+      <span>${student.name}</span>
+      ${hasEval ? '<span class="status-done">✓</span>' : ''}
+    `;
+
+    li.addEventListener("click", () => selectStudent(student));
+    ul.appendChild(li);
+  });
 }
 
-function renderPresetChips() {
-  const task = appData.tasks.find(t => t.id === selectedTaskId);
-  const container = document.getElementById('preset-feedback-chips');
-  container.innerHTML = '';
+function selectStudent(student) {
+  currentSelectedStudent = student;
+  renderStudentList();
+  resetTimer();
 
-  if (!task || !task.presetFeedback || task.presetFeedback.length === 0) {
-    container.innerHTML = '<small class="text-muted">Geen snelle opmerkingen ingesteld voor deze opdracht.</small>';
+  document.getElementById("eval-student-title").textContent = student.name;
+  document.getElementById("eval-task-subtitle").textContent = `Opdracht: ${currentSelectedTask ? currentSelectedTask.title : '-'}`;
+
+  loadEvaluationForStudent();
+}
+
+function loadEvaluationForStudent() {
+  currentScores = {};
+  document.getElementById("eval-general-feedback").value = "";
+
+  if (!currentSelectedStudent || !currentSelectedTask) return;
+
+  // Haal evaluaties op (gesorteerd op datum nieuwst eerst)
+  const evals = appData.evaluations
+    .filter(e => e.studentId === currentSelectedStudent.id && e.taskId === currentSelectedTask.id)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // Historiek Weergave
+  const historyCard = document.getElementById("student-history-card");
+  const historyContent = document.getElementById("history-content");
+  const retryBtn = document.getElementById("btn-retry-eval");
+
+  if (evals.length > 0) {
+    historyCard.style.display = "block";
+    retryBtn.style.display = "inline-block";
+    historyContent.innerHTML = evals.map((ev, idx) => `
+      <div class="history-item">
+        <strong>${idx === 0 ? 'Laatste Evaluatie' : 'Vorige poging'} (${ev.date}) - Spreektijd: ${ev.timer || '00:00'}:</strong> 
+        Score: <strong>${ev.totalScore} / ${ev.maxScore}</strong> | Opmerkingen: ${ev.feedback || 'Geen'}
+      </div>
+    `).join("");
+
+    // Laad meest recente evaluatie in formulier
+    const latest = evals[0];
+    currentScores = JSON.parse(JSON.stringify(latest.scores || {}));
+    document.getElementById("eval-general-feedback").value = latest.feedback || "";
+    if (latest.timerSeconds) timerSeconds = latest.timerSeconds;
+    updateTimerDisplay();
+  } else {
+    historyCard.style.display = "none";
+    retryBtn.style.display = "none";
+  }
+
+  renderRubrics();
+}
+
+function renderRubrics() {
+  const wrapper = document.getElementById("eval-rubrics-wrapper");
+  wrapper.innerHTML = "";
+
+  if (!currentSelectedTask) {
+    wrapper.innerHTML = "<p class='text-muted'>Selecteer eerst een opdracht.</p>";
+    updateScoreDisplay();
     return;
   }
 
-  task.presetFeedback.forEach(text => {
-    const chip = document.createElement('button');
-    chip.className = 'chip-btn';
-    chip.innerText = `+ ${text}`;
-    chip.onclick = () => {
-      const area = document.getElementById('eval-general-feedback');
-      if (area.value.trim() === '') {
-        area.value = text;
-      } else {
-        area.value += `\n- ${text}`;
+  currentSelectedTask.criteria.forEach(criterion => {
+    const block = document.createElement("div");
+    block.className = "rubric-block";
+
+    const header = document.createElement("div");
+    header.className = "rubric-header";
+    header.innerHTML = `
+      <h4>${criterion.title}</h4>
+      <span class="badge">Gewicht: ${criterion.weight || 1}x</span>
+    `;
+    block.appendChild(header);
+
+    const levelsFlex = document.createElement("div");
+    levelsFlex.className = "levels-flex";
+
+    criterion.levels.forEach((level, lIdx) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "level-button";
+
+      const isSelected = currentScores[criterion.id] && currentScores[criterion.id].levelIndex === lIdx;
+      if (isSelected) btn.classList.add("selected");
+
+      btn.innerHTML = `
+        <div class="level-score-tag">${level.label} (${level.score}pt)</div>
+        <div class="level-desc-text">${level.desc}</div>
+      `;
+
+      btn.addEventListener("click", () => {
+        currentScores[criterion.id] = {
+          levelIndex: lIdx,
+          score: level.score,
+          weight: criterion.weight || 1
+        };
+        renderRubrics();
+      });
+
+      levelsFlex.appendChild(btn);
+    });
+
+    block.appendChild(levelsFlex);
+    wrapper.appendChild(block);
+  });
+
+  updateScoreDisplay();
+}
+
+function updateScoreDisplay() {
+  let currentTotal = 0;
+  let maxTotal = 0;
+
+  if (currentSelectedTask) {
+    currentSelectedTask.criteria.forEach(c => {
+      const w = c.weight || 1;
+      const maxLevelScore = Math.max(...c.levels.map(l => l.score), 0);
+      maxTotal += maxLevelScore * w;
+
+      if (currentScores[c.id]) {
+        currentTotal += currentScores[c.id].score * w;
       }
-    };
+    });
+  }
+
+  document.getElementById("eval-total-score").textContent = `${currentTotal} / ${maxTotal}`;
+}
+
+function renderPresetChips() {
+  const container = document.getElementById("preset-feedback-chips");
+  container.innerHTML = "";
+
+  if (!currentSelectedTask || !currentSelectedTask.presets) {
+    container.innerHTML = "<p class='text-muted'>Geen snelle opmerkingen ingesteld voor deze opdracht.</p>";
+    return;
+  }
+
+  currentSelectedTask.presets.forEach(text => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip-btn";
+    chip.textContent = text;
+    chip.addEventListener("click", () => {
+      const textarea = document.getElementById("eval-general-feedback");
+      if (textarea.value.trim() !== "") {
+        textarea.value += ", " + text;
+      } else {
+        textarea.value = text;
+      }
+    });
     container.appendChild(chip);
   });
 }
 
-function renderRubrics() {
-  const task = appData.tasks.find(t => t.id === selectedTaskId);
-  const container = document.getElementById('eval-rubrics-wrapper');
-  container.innerHTML = '';
-
-  if (!task) return;
-  document.getElementById('eval-task-subtitle').innerText = `Opdracht: ${task.title}`;
-
-  task.criteria.forEach(crit => {
-    const block = document.createElement('div');
-    block.className = 'rubric-block';
-    
-    const max = crit.maxScore || 10;
-    block.innerHTML = `
-      <div class="rubric-header">
-        <h4>${crit.title}</h4>
-        <span class="badge">Max: ${max} ptn</span>
-      </div>
-    `;
-
-    const flex = document.createElement('div');
-    flex.className = 'levels-flex';
-
-    crit.levels.forEach(lvl => {
-      const btn = document.createElement('button');
-      btn.className = `level-button ${currentScores[crit.id] === lvl.score ? 'selected' : ''}`;
-      
-      btn.innerHTML = `
-        <div class="level-score-tag">${lvl.score} / ${max} ptn</div>
-        <div class="level-desc-text">${lvl.text}</div>
-      `;
-
-      btn.onclick = () => {
-        currentScores[crit.id] = lvl.score;
-        renderRubrics();
-        calculateTotalScore();
-        // Criteriumtekst wordt NIEUT meer automatisch in de feedback gezet
-      };
-      flex.appendChild(btn);
-    });
-
-    block.appendChild(flex);
-    container.appendChild(block);
-  });
-
-  calculateTotalScore();
-}
-
-function calculateTotalScore() {
-  const task = appData.tasks.find(t => t.id === selectedTaskId);
-  if (!task) return;
-
-  let totalEarned = 0;
-  let totalMax = 0;
-
-  task.criteria.forEach(crit => {
-    const max = Number(crit.maxScore) || 0;
-    totalMax += max;
-
-    if (currentScores[crit.id] !== undefined) {
-      totalEarned += Number(currentScores[crit.id]);
-    }
-  });
-
-  document.getElementById('eval-total-score').innerText = `${totalEarned} / ${totalMax}`;
-}
-
-function loadStudentEvaluation() {
-  resetTimer();
-  
-  // Enkel "Herkansing" tonen vanaf poging 2
-  const attemptLabel = currentAttempt > 1 ? ` (Herkansing ${currentAttempt - 1})` : '';
-  document.getElementById('eval-student-title').innerText = selectedStudent ? `${selectedStudent}${attemptLabel}` : 'Selecteer een leerling';
-  
-  const existing = appData.evaluations.find(e => 
-    e.taskId === selectedTaskId && 
-    e.studentName === selectedStudent && 
-    e.schoolYear === appData.currentSchoolYear &&
-    e.attempt === currentAttempt
-  );
-
-  if (existing) {
-    currentScores = existing.scores || {};
-    document.getElementById('eval-general-feedback').value = existing.feedback || '';
-    if (existing.speakingTime) {
-      timerSeconds = existing.speakingTime;
-      updateTimerDisplay();
-    }
-  } else {
-    currentScores = {};
-    document.getElementById('eval-general-feedback').value = '';
+function saveCurrentEvaluation() {
+  if (!currentSelectedStudent) {
+    alert("Selecteer eerst een leerling.");
+    return;
   }
-
-  const retryBtn = document.getElementById('btn-retry-eval');
-  const allAttempts = appData.evaluations.filter(e => e.taskId === selectedTaskId && e.studentName === selectedStudent && e.schoolYear === appData.currentSchoolYear);
-  if (allAttempts.length > 0 && selectedStudent) {
-    retryBtn.style.display = 'inline-block';
-    retryBtn.onclick = () => {
-      currentAttempt = allAttempts.length + 1;
-      loadStudentEvaluation();
-    };
-  } else {
-    retryBtn.style.display = 'none';
-  }
-
-  renderStudentHistory();
-  renderRubrics();
-}
-
-function renderStudentHistory() {
-  const historyCard = document.getElementById('student-history-card');
-  const historyContent = document.getElementById('history-content');
-  
-  if (!selectedStudent) {
-    historyCard.style.display = 'none';
+  if (!currentSelectedTask) {
+    alert("Selecteer eerst een opdracht.");
     return;
   }
 
-  const previousEvals = appData.evaluations.filter(e => e.studentName === selectedStudent);
+  const mins = Math.floor(timerSeconds / 60).toString().padStart(2, "0");
+  const secs = (timerSeconds % 60).toString().padStart(2, "0");
+  const formattedTimer = `${mins}:${secs}`;
 
-  if (previousEvals.length === 0) {
-    historyCard.style.display = 'none';
-    return;
-  }
+  let currentTotal = 0;
+  let maxTotal = 0;
 
-  historyCard.style.display = 'block';
-  historyContent.innerHTML = previousEvals.map(e => {
-    const task = appData.tasks.find(t => t.id === e.taskId);
-    const taskTitle = task ? task.title : "Onbekende Opdracht";
-    let scoreSum = 0;
-    Object.values(e.scores).forEach(s => scoreSum += Number(s));
-    const attText = e.attempt > 1 ? ` (Herkansing ${e.attempt - 1})` : '';
+  currentSelectedTask.criteria.forEach(c => {
+    const w = c.weight || 1;
+    const maxLevelScore = Math.max(...c.levels.map(l => l.score), 0);
+    maxTotal += maxLevelScore * w;
 
-    return `
-      <div class="history-item">
-        <strong>${e.schoolYear} | ${taskTitle}${attText}:</strong> ${scoreSum} ptn 
-        <small>(${e.date || 'Datum onbekend'})</small>
-        <div><em>"${e.feedback || 'Geen opmerkingen'}"</em></div>
-      </div>
-    `;
-  }).join('');
-}
+    if (currentScores[c.id]) {
+      currentTotal += currentScores[c.id].score * w;
+    }
+  });
 
-// OPSLAAN EVALUATIE
-document.getElementById('btn-save-evaluation').onclick = () => {
-  if (!selectedStudent || !selectedTaskId) return;
-  stopTimer();
-
-  let fb = document.getElementById('eval-general-feedback').value;
-  if (timerSeconds > 0 && !fb.includes("Spreektijd:")) {
-    fb = `[Spreektijd: ${formatTime(timerSeconds)}]\n` + fb;
-  }
-
-  const evalIndex = appData.evaluations.findIndex(e => 
-    e.taskId === selectedTaskId && 
-    e.studentName === selectedStudent && 
-    e.schoolYear === appData.currentSchoolYear &&
-    e.attempt === currentAttempt
-  );
-
-  const evalData = {
-    taskId: selectedTaskId,
-    studentName: selectedStudent,
+  const evaluationData = {
+    id: "eval_" + Date.now(),
+    studentId: currentSelectedStudent.id,
+    taskId: currentSelectedTask.id,
+    classId: currentSelectedClass ? currentSelectedClass.id : null,
     schoolYear: appData.currentSchoolYear,
-    attempt: currentAttempt,
+    date: new Date().toLocaleDateString("nl-BE"),
+    timer: formattedTimer,
+    timerSeconds: timerSeconds,
     scores: currentScores,
-    feedback: fb,
-    speakingTime: timerSeconds,
-    date: new Date().toLocaleDateString('nl-BE')
+    totalScore: currentTotal,
+    maxScore: maxTotal,
+    feedback: document.getElementById("eval-general-feedback").value.trim()
   };
 
-  if (evalIndex >= 0) {
-    appData.evaluations[evalIndex] = evalData;
-  } else {
-    appData.evaluations.push(evalData);
+  appData.evaluations.push(evaluationData);
+  saveData();
+
+  alert(`Evaluatie voor ${currentSelectedStudent.name} succesvol opgeslagen!`);
+  loadEvaluationForStudent();
+  renderStudentList();
+}
+
+function startRetryEvaluation() {
+  currentScores = {};
+  document.getElementById("eval-general-feedback").value = "";
+  resetTimer();
+  renderRubrics();
+  alert("Nieuwe poging/herkansing gestart. Vul het formulier in en klik op Opslaan.");
+}
+
+/* ==========================================================================
+   PDF EXPORT FUNCTIONALITEIT
+   ========================================================================== */
+
+function exportStudentPDF() {
+  if (!currentSelectedStudent || !currentSelectedTask) {
+    alert("Selecteer een leerling en opdracht.");
+    return;
   }
 
-  saveToStorage();
-  renderStudents();
-  alert('Evaluatie succesvol opgeslagen!');
-};
+  const element = document.createElement("div");
+  element.style.padding = "20px";
+  element.style.fontFamily = "sans-serif";
 
-// EXPORT PDF PER LEERLING
-document.getElementById('btn-export-pdf').onclick = () => {
-  if (!selectedStudent) return;
-  exportSingleStudentPDF(selectedStudent, selectedTaskId, currentAttempt);
-};
+  const totalScoreText = document.getElementById("eval-total-score").textContent;
+  const mins = Math.floor(timerSeconds / 60).toString().padStart(2, "0");
+  const secs = (timerSeconds % 60).toString().padStart(2, "0");
 
-function exportSingleStudentPDF(studentName, taskId, attempt) {
-  const task = appData.tasks.find(t => t.id === taskId);
-  const evalData = appData.evaluations.find(e => e.taskId === taskId && e.studentName === studentName && e.attempt === attempt && e.schoolYear === appData.currentSchoolYear);
-
-  const container = document.createElement('div');
-  container.style.padding = '20px';
-  const attLabel = attempt > 1 ? ` (Herkansing ${attempt - 1})` : '';
-
-  let scoreSum = 0;
-  if (evalData && evalData.scores) {
-    Object.values(evalData.scores).forEach(s => scoreSum += Number(s));
-  }
-
-  container.innerHTML = `
-    <h2>Evaluatierapport: ${studentName}${attLabel}</h2>
-    <p><strong>Opdracht:</strong> ${task ? task.title : ''} | <strong>Schooljaar:</strong> ${appData.currentSchoolYear}</p>
-    <p><strong>Datum:</strong> ${evalData ? evalData.date : 'Niet geëvalueerd'}</p>
-    <hr><br>
-    <h3>Totale Score: ${scoreSum} ptn</h3>
-    <br>
-    <h4>Feedback & Opmerkingen:</h4>
-    <p>${evalData && evalData.feedback ? evalData.feedback.replace(/\n/g, '<br>') : 'Geen feedback ingegeven.'}</p>
+  element.innerHTML = `
+    <h2>Evaluatierapport: ${currentSelectedStudent.name}</h2>
+    <p><strong>Opdracht:</strong> ${currentSelectedTask.title} | <strong>Datum:</strong> ${new Date().toLocaleDateString("nl-BE")}</p>
+    <p><strong>Spreektijd:</strong> ${mins}:${secs} | <strong>Eindscore:</strong> ${totalScoreText}</p>
+    <hr>
+    <h3>Beoordeling per criterium:</h3>
+    ${currentSelectedTask.criteria.map(c => {
+      const sel = currentScores[c.id];
+      const level = sel ? c.levels[sel.levelIndex] : null;
+      return `
+        <div style="margin-bottom: 12px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+          <strong>${c.title}</strong> (Gewicht: ${c.weight || 1}x)<br>
+          Niveau: ${level ? `${level.label} (${level.score}pt)` : 'Niet beoordeeld'}<br>
+          <small>${level ? level.desc : ''}</small>
+        </div>
+      `;
+    }).join("")}
+    <hr>
+    <h3>Algemene Feedback:</h3>
+    <p>${document.getElementById("eval-general-feedback").value || 'Geen extra opmerkingen.'}</p>
   `;
 
-  html2pdf().from(container).save(`Evaluatie_${studentName}_${task ? task.title : 'Rapport'}.pdf`);
-}
-
-// BULK PDF EXPORT PER KLAS
-document.getElementById('btn-export-class-pdf').onclick = () => {
-  exportClassPDF(selectedClassId, selectedTaskId);
-};
-
-function exportClassPDF(classId, taskId) {
-  const currentClass = appData.classes.find(c => c.id === classId);
-  const task = appData.tasks.find(t => t.id === taskId);
-  if (!currentClass || !task) return;
-
-  const container = document.createElement('div');
-  container.style.padding = '20px';
-
-  container.innerHTML = `<h1>Evaluatierapport Klas: ${currentClass.name}</h1><h3>Opdracht: ${task.title} (${appData.currentSchoolYear})</h3><hr><br>`;
-
-  currentClass.students.forEach(student => {
-    const studentEvals = appData.evaluations.filter(e => 
-      e.taskId === taskId && 
-      e.studentName === student && 
-      e.schoolYear === appData.currentSchoolYear
-    );
-
-    container.innerHTML += `<h2>Leerling: ${student}</h2>`;
-    if (studentEvals.length === 0) {
-      container.innerHTML += `<p><em>Nog geen evaluatie uitgevoerd.</em></p>`;
-    } else {
-      studentEvals.forEach(e => {
-        let scoreSum = 0;
-        Object.values(e.scores).forEach(s => scoreSum += Number(s));
-        const attLabel = e.attempt > 1 ? ` (Herkansing ${e.attempt - 1})` : '';
-        container.innerHTML += `
-          <div style="border:1px solid #ccc; padding:10px; margin-bottom:15px; border-radius:5px;">
-            <p><strong>Poging: ${attLabel || 'Eerste evaluatie'}</strong> (${e.date}) - <strong>Score: ${scoreSum} ptn</strong></p>
-            <p><strong>Feedback:</strong><br>${(e.feedback || '').replace(/\n/g, '<br>')}</p>
-          </div>
-        `;
-      });
-    }
-    container.innerHTML += `<hr style="margin:20px 0;">`;
-  });
-
-  html2pdf().from(container).save(`Klasrapport_${currentClass.name}_${task.title}.pdf`);
-}
-
-// SCHERM 2: DASHBOARD (OPDRACHTEN BEHEREN & KOPIËREN)
-function initDashboardScreen() {
-  renderDashboardTaskList();
-  if (appData.tasks.length > 0) {
-    selectTaskForEditing(appData.tasks[0].id);
-  }
-}
-
-function renderDashboardTaskList() {
-  const list = document.getElementById('dashboard-task-list');
-  list.innerHTML = appData.tasks.map(t => 
-    `<li class="${editingTaskId === t.id ? 'active' : ''}" onclick="selectTaskForEditing('${t.id}')">${t.title}</li>`
-  ).join('');
-}
-
-function selectTaskForEditing(taskId) {
-  editingTaskId = taskId;
-  renderDashboardTaskList();
-  const task = appData.tasks.find(t => t.id === taskId);
-  if (!task) return;
-
-  document.getElementById('task-name-input').value = task.title;
-  document.getElementById('task-presets-input').value = (task.presetFeedback || []).join(', ');
-  renderCriteriaEditor(task);
-}
-
-function renderCriteriaEditor(task) {
-  const container = document.getElementById('editor-criteria-container');
-  container.innerHTML = '';
-
-  task.criteria.forEach((crit, cIdx) => {
-    const box = document.createElement('div');
-    box.className = 'criterion-editor-box';
-    box.innerHTML = `
-      <div class="criterion-header-inputs">
-        <div class="field-group">
-          <label>Criterium Titel:</label>
-          <input type="text" value="${crit.title}" onchange="appData.tasks.find(t => t.id === '${task.id}').criteria[${cIdx}].title = this.value">
-        </div>
-        <div class="field-group">
-          <label>Max. Punten:</label>
-          <input type="number" min="1" value="${crit.maxScore || 10}" onchange="appData.tasks.find(t => t.id === '${task.id}').criteria[${cIdx}].maxScore = parseInt(this.value)">
-        </div>
-      </div>
-      <label class="field-group label">Niveaus (Punten & Feedback):</label>
-    `;
-
-    crit.levels.forEach((lvl, lIdx) => {
-      const row = document.createElement('div');
-      row.className = 'level-editor-row';
-      row.innerHTML = `
-        <input type="number" value="${lvl.score}" placeholder="Punten" onchange="appData.tasks.find(t => t.id === '${task.id}').criteria[${cIdx}].levels[${lIdx}].score = parseInt(this.value)">
-        <input type="text" value="${lvl.text}" placeholder="Feedbacktekst" onchange="appData.tasks.find(t => t.id === '${task.id}').criteria[${cIdx}].levels[${lIdx}].text = this.value">
-        <button class="btn btn-sm btn-danger" onclick="deleteLevel('${task.id}', ${cIdx}, ${lIdx})">X</button>
-      `;
-      box.appendChild(row);
-    });
-
-    const addLvlBtn = document.createElement('button');
-    addLvlBtn.className = 'btn btn-sm btn-secondary mt-3';
-    addLvlBtn.innerText = '+ Niveau Toevoegen';
-    addLvlBtn.onclick = () => {
-      task.criteria[cIdx].levels.push({ score: 0, text: '' });
-      renderCriteriaEditor(task);
-    };
-    box.appendChild(addLvlBtn);
-    container.appendChild(box);
-  });
-}
-
-function deleteLevel(taskId, cIdx, lIdx) {
-  const task = appData.tasks.find(t => t.id === taskId);
-  task.criteria[cIdx].levels.splice(lIdx, 1);
-  renderCriteriaEditor(task);
-}
-
-document.getElementById('btn-add-criterion').onclick = () => {
-  const task = appData.tasks.find(t => t.id === editingTaskId);
-  if (!task) return;
-  task.criteria.push({ id: `crit-${Date.now()}`, title: "Nieuw Criterium", maxScore: 10, levels: [{ score: 0, text: "" }] });
-  renderCriteriaEditor(task);
-};
-
-document.getElementById('btn-add-task').onclick = () => {
-  const newTask = { id: `task-${Date.now()}`, title: "Nieuwe Opdracht", presetFeedback: [], criteria: [] };
-  appData.tasks.push(newTask);
-  selectTaskForEditing(newTask.id);
-};
-
-// OPDRACHT KOPIËREN
-document.getElementById('btn-copy-task').onclick = () => {
-  const original = appData.tasks.find(t => t.id === editingTaskId);
-  if (!original) return;
-
-  const copiedTask = JSON.parse(JSON.stringify(original));
-  copiedTask.id = `task-${Date.now()}`;
-  copiedTask.title = `${original.title} (Kopie)`;
-
-  appData.tasks.push(copiedTask);
-  saveToStorage();
-  selectTaskForEditing(copiedTask.id);
-  alert('Opdracht succesvol gekopieerd!');
-};
-
-document.getElementById('btn-save-task-changes').onclick = () => {
-  const task = appData.tasks.find(t => t.id === editingTaskId);
-  if (task) {
-    task.title = document.getElementById('task-name-input').value;
-    const presetsRaw = document.getElementById('task-presets-input').value;
-    task.presetFeedback = presetsRaw.split(',').map(s => s.trim()).filter(s => s.length > 0);
-    saveToStorage();
-    renderDashboardTaskList();
-    alert('Opdracht succesvol opgeslagen!');
-  }
-};
-
-document.getElementById('btn-delete-task').onclick = () => {
-  if (confirm('Wil je deze opdracht echt verwijderen?')) {
-    appData.tasks = appData.tasks.filter(t => t.id !== editingTaskId);
-    saveToStorage();
-    initDashboardScreen();
-  }
-};
-
-// SCHERM 3: KLASSENBEHEER & SCORES OVERZICHT
-function initClassesScreen() {
-  renderClassesList();
-  const currentClasses = appData.classes.filter(c => c.year === appData.currentSchoolYear);
-  if (currentClasses.length > 0) {
-    selectClassForEditing(currentClasses[0].id);
-  }
-}
-
-// SUB-TABS BINNEN KLASSEN
-document.getElementById('tab-btn-class-edit').onclick = () => {
-  document.getElementById('tab-content-class-edit').style.display = 'block';
-  document.getElementById('tab-content-class-overview').style.display = 'none';
-  document.getElementById('tab-btn-class-edit').classList.replace('btn-secondary', 'btn-primary');
-  document.getElementById('tab-btn-class-overview').classList.replace('btn-primary', 'btn-secondary');
-};
-
-document.getElementById('tab-btn-class-overview').onclick = () => {
-  document.getElementById('tab-content-class-edit').style.display = 'none';
-  document.getElementById('tab-content-class-overview').style.display = 'block';
-  document.getElementById('tab-btn-class-overview').classList.replace('btn-secondary', 'btn-primary');
-  document.getElementById('tab-btn-class-edit').classList.replace('btn-primary', 'btn-secondary');
-  renderClassOverview();
-};
-
-function renderClassesList() {
-  const list = document.getElementById('classes-class-list');
-  const currentClasses = appData.classes.filter(c => c.year === appData.currentSchoolYear);
-  
-  list.innerHTML = currentClasses.map(c => 
-    `<li class="${editingClassId === c.id ? 'active' : ''}" onclick="selectClassForEditing('${c.id}')">${c.name}</li>`
-  ).join('');
-}
-
-function selectClassForEditing(classId) {
-  editingClassId = classId;
-  renderClassesList();
-  const cls = appData.classes.find(c => c.id === classId);
-  if (!cls) return;
-
-  document.getElementById('class-name-input').value = cls.name;
-  document.getElementById('class-students-input').value = cls.students.join('\n');
-  renderClassOverview();
-}
-
-function renderClassOverview() {
-  const cls = appData.classes.find(c => c.id === editingClassId);
-  const taskSelect = document.getElementById('overview-task-select');
-  const listContainer = document.getElementById('class-students-overview-list');
-  
-  if (!cls) return;
-
-  taskSelect.innerHTML = appData.tasks.map(t => `<option value="${t.id}">${t.title}</option>`).join('');
-  document.getElementById('btn-download-overview-class-pdf').onclick = () => {
-    exportClassPDF(cls.id, taskSelect.value);
+  const opt = {
+    margin: 10,
+    filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
-  listContainer.innerHTML = '';
+  html2pdf().set(opt).from(element).save();
+}
 
-  cls.students.forEach(student => {
-    const card = document.createElement('div');
-    card.className = 'card-section mb-2';
+function exportClassPDF() {
+  if (!currentSelectedClass || !currentSelectedTask) {
+    alert("Selecteer een klas en een opdracht.");
+    return;
+  }
 
-    const evals = appData.evaluations.filter(e => e.studentName === student && e.schoolYear === appData.currentSchoolYear);
+  const element = document.createElement("div");
+  element.style.padding = "20px";
+  element.style.fontFamily = "sans-serif";
 
-    let html = `<h4>${student}</h4>`;
-    if (evals.length === 0) {
-      html += `<small class="text-muted">Nog geen evaluaties vastgelegd dit schooljaar.</small>`;
-    } else {
-      evals.forEach(e => {
-        const t = appData.tasks.find(task => task.id === e.taskId);
-        let scoreSum = 0;
-        Object.values(e.scores).forEach(s => scoreSum += Number(s));
-        const attLabel = e.attempt > 1 ? ` (Herkansing ${e.attempt - 1})` : '';
+  element.innerHTML = `<h1>Klassevaluatie: ${currentSelectedClass.name}</h1><h3>Opdracht: ${currentSelectedTask.title}</h3><hr>`;
 
-        html += `
-          <div class="overview-eval-row">
-            <span><strong>${t ? t.title : 'Opdracht'}${attLabel}:</strong> ${scoreSum} ptn (${e.date})</span>
-            <button class="btn btn-sm btn-secondary" onclick="exportSingleStudentPDF('${student}', '${e.taskId}', ${e.attempt})">PDF Download</button>
-          </div>
-        `;
-      });
-    }
+  currentSelectedClass.students.forEach(student => {
+    const ev = appData.evaluations.find(e => e.studentId === student.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
 
-    card.innerHTML = html;
-    listContainer.appendChild(card);
+    element.innerHTML += `
+      <div style="margin-bottom: 20px; page-break-inside: avoid;">
+        <h3>${student.name} - Score: ${ev ? `${ev.totalScore}/${ev.maxScore}` : 'Nog niet geëvalueerd'}</h3>
+        <p><strong>Spreektijd:</strong> ${ev ? ev.timer : '-'} | <strong>Feedback:</strong> ${ev ? (ev.feedback || 'Geen') : '-'}</p>
+        <hr style="border: 0.5px dashed #ccc;">
+      </div>
+    `;
+  });
+
+  const opt = {
+    margin: 10,
+    filename: `Klas_Evaluatie_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(element).save();
+}
+
+/* ==========================================================================
+   SCHERM 2: DASHBOARD (OPDRACHTEN & RUBRICS BEWERKEN)
+   ========================================================================== */
+
+let editingTask = null;
+
+function initDashboardScreen() {
+  renderTaskList();
+  if (appData.tasks.length > 0 && !editingTask) {
+    loadTaskInEditor(appData.tasks[0]);
+  }
+}
+
+function renderTaskList() {
+  const ul = document.getElementById("dashboard-task-list");
+  ul.innerHTML = "";
+
+  appData.tasks.forEach(task => {
+    const li = document.createElement("li");
+    if (editingTask && editingTask.id === task.id) li.classList.add("active");
+    li.textContent = task.title;
+    li.addEventListener("click", () => loadTaskInEditor(task));
+    ul.appendChild(li);
   });
 }
 
-document.getElementById('btn-add-class').onclick = () => {
-  const newClass = { id: `class-${Date.now()}`, year: appData.currentSchoolYear, name: "Nieuwe Klas", students: [] };
-  appData.classes.push(newClass);
-  selectClassForEditing(newClass.id);
-};
+function loadTaskInEditor(task) {
+  editingTask = JSON.parse(JSON.stringify(task));
+  renderTaskList();
 
-document.getElementById('btn-save-class-changes').onclick = () => {
-  const cls = appData.classes.find(c => c.id === editingClassId);
-  if (cls) {
-    cls.name = document.getElementById('class-name-input').value;
-    cls.students = document.getElementById('class-students-input').value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-    saveToStorage();
+  document.getElementById("task-name-input").value = editingTask.title;
+  document.getElementById("task-presets-input").value = (editingTask.presets || []).join(", ");
+
+  renderCriteriaEditor();
+}
+
+function renderCriteriaEditor() {
+  const container = document.getElementById("editor-criteria-container");
+  container.innerHTML = "";
+
+  if (!editingTask || !editingTask.criteria) return;
+
+  editingTask.criteria.forEach((c, cIdx) => {
+    const box = document.createElement("div");
+    box.className = "criterion-editor-box";
+
+    box.innerHTML = `
+      <div class="criterion-header-inputs mb-2">
+        <div>
+          <label>Criterium Titel:</label>
+          <input type="text" value="${c.title}" onchange="updateCriterionTitle(${cIdx}, this.value)">
+        </div>
+        <div>
+          <label>Gewicht (x):</label>
+          <input type="number" min="1" value="${c.weight || 1}" onchange="updateCriterionWeight(${cIdx}, this.value)">
+        </div>
+      </div>
+      <h5>Niveaus:</h5>
+      <div id="levels-editor-${cIdx}"></div>
+      <button class="btn btn-sm btn-danger mt-2" onclick="removeCriterion(${cIdx})">Verwijder Criterium</button>
+    `;
+
+    container.appendChild(box);
+
+    const levelsContainer = box.querySelector(`#levels-editor-${cIdx}`);
+    c.levels.forEach((lvl, lIdx) => {
+      const row = document.createElement("div");
+      row.className = "level-editor-row";
+      row.innerHTML = `
+        <input type="number" value="${lvl.score}" placeholder="pt" onchange="updateLevelScore(${cIdx}, ${lIdx}, this.value)">
+        <input type="text" value="${lvl.label}" placeholder="Label" onchange="updateLevelLabel(${cIdx}, ${lIdx}, this.value)">
+        <input type="text" value="${lvl.desc}" placeholder="Omschrijving" onchange="updateLevelDesc(${cIdx}, ${lIdx}, this.value)">
+      `;
+      levelsContainer.appendChild(row);
+    });
+  });
+}
+
+// Global scope helpers voor inline onchange/onclick handlers in editor
+window.updateCriterionTitle = (cIdx, val) => { editingTask.criteria[cIdx].title = val; };
+window.updateCriterionWeight = (cIdx, val) => { editingTask.criteria[cIdx].weight = parseFloat(val) || 1; };
+window.removeCriterion = (cIdx) => { editingTask.criteria.splice(cIdx, 1); renderCriteriaEditor(); };
+window.updateLevelScore = (cIdx, lIdx, val) => { editingTask.criteria[cIdx].levels[lIdx].score = parseFloat(val) || 0; };
+window.updateLevelLabel = (cIdx, lIdx, val) => { editingTask.criteria[cIdx].levels[lIdx].label = val; };
+window.updateLevelDesc = (cIdx, lIdx, val) => { editingTask.criteria[cIdx].levels[lIdx].desc = val; };
+
+function addCriterionToEditor() {
+  if (!editingTask) return;
+  editingTask.criteria.push({
+    id: "c_" + Date.now(),
+    title: "Nieuw Criterium",
+    weight: 1,
+    levels: [
+      { label: "Onvoldoende", score: 2, desc: "" },
+      { label: "Voldoende", score: 6, desc: "" },
+      { label: "Goed", score: 8, desc: "" },
+      { label: "Zeer Goed", score: 10, desc: "" }
+    ]
+  });
+  renderCriteriaEditor();
+}
+
+function createNewTask() {
+  const newTask = {
+    id: "t_" + Date.now(),
+    title: "Nieuwe Opdracht",
+    presets: [],
+    criteria: []
+  };
+  appData.tasks.push(newTask);
+  saveData();
+  loadTaskInEditor(newTask);
+}
+
+function copyCurrentTask() {
+  if (!editingTask) return;
+  const copiedTask = JSON.parse(JSON.stringify(editingTask));
+  copiedTask.id = "t_" + Date.now();
+  copiedTask.title += " (Kopie)";
+
+  appData.tasks.push(copiedTask);
+  saveData();
+  loadTaskInEditor(copiedTask);
+  alert("Opdracht gekopieerd!");
+}
+
+function saveTaskChanges() {
+  if (!editingTask) return;
+
+  editingTask.title = document.getElementById("task-name-input").value.trim();
+  const presetsVal = document.getElementById("task-presets-input").value;
+  editingTask.presets = presetsVal.split(",").map(s => s.trim()).filter(s => s.length > 0);
+
+  const index = appData.tasks.findIndex(t => t.id === editingTask.id);
+  if (index !== -1) {
+    appData.tasks[index] = editingTask;
+    saveData();
+    alert("Wijzigingen in opdracht opgeslagen!");
+    renderTaskList();
+  }
+}
+
+function deleteTask() {
+  if (!editingTask) return;
+  if (confirm(`Weet je zeker dat je '${editingTask.title}' wilt verwijderen?`)) {
+    appData.tasks = appData.tasks.filter(t => t.id !== editingTask.id);
+    saveData();
+    editingTask = null;
+    initDashboardScreen();
+  }
+}
+
+/* ==========================================================================
+   SCHERM 3: KLASSENBEHEER & OVERZICHT
+   ========================================================================== */
+
+let editingClass = null;
+
+function initClassesScreen() {
+  renderClassesList();
+  populateTaskSelect("overview-task-select");
+  if (appData.classes.length > 0 && !editingClass) {
+    const currentClasses = appData.classes.filter(c => c.schoolYear === appData.currentSchoolYear);
+    if (currentClasses.length > 0) loadClassInEditor(currentClasses[0]);
+  }
+}
+
+function renderClassesList() {
+  const ul = document.getElementById("classes-class-list");
+  ul.innerHTML = "";
+
+  const currentClasses = appData.classes.filter(c => c.schoolYear === appData.currentSchoolYear);
+
+  currentClasses.forEach(c => {
+    const li = document.createElement("li");
+    if (editingClass && editingClass.id === c.id) li.classList.add("active");
+    li.textContent = c.name;
+    li.addEventListener("click", () => loadClassInEditor(c));
+    ul.appendChild(li);
+  });
+}
+
+function loadClassInEditor(c) {
+  editingClass = JSON.parse(JSON.stringify(c));
+  renderClassesList();
+
+  document.getElementById("class-name-input").value = editingClass.name;
+  const names = (editingClass.students || []).map(s => s.name).join("\n");
+  document.getElementById("class-students-input").value = names;
+
+  renderOverviewTab();
+}
+
+function switchClassSubTab(tab) {
+  const editTab = document.getElementById("tab-content-class-edit");
+  const overviewTab = document.getElementById("tab-content-class-overview");
+  const btnEdit = document.getElementById("tab-btn-class-edit");
+  const btnOverview = document.getElementById("tab-btn-class-overview");
+
+  if (tab === "edit") {
+    editTab.style.display = "block";
+    overviewTab.style.display = "none";
+    btnEdit.className = "btn btn-sm btn-primary";
+    btnOverview.className = "btn btn-sm btn-secondary";
+  } else {
+    editTab.style.display = "none";
+    overviewTab.style.display = "block";
+    btnEdit.className = "btn btn-sm btn-secondary";
+    btnOverview.className = "btn btn-sm btn-primary";
+    renderOverviewTab();
+  }
+}
+
+function renderOverviewTab() {
+  const container = document.getElementById("class-students-overview-list");
+  container.innerHTML = "";
+
+  if (!editingClass) {
+    container.innerHTML = "<p class='text-muted'>Selecteer eerst een klas.</p>";
+    return;
+  }
+
+  editingClass.students.forEach(student => {
+    const evals = appData.evaluations.filter(e => e.studentId === student.id && e.schoolYear === appData.currentSchoolYear);
+    const row = document.createElement("div");
+    row.className = "overview-eval-row";
+    row.innerHTML = `
+      <span><strong>${student.name}</strong></span>
+      <span>Evaluaties voltooid: ${evals.length}</span>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function saveClassChanges() {
+  if (!editingClass) return;
+
+  editingClass.name = document.getElementById("class-name-input").value.trim();
+  const rawNames = document.getElementById("class-students-input").value.split("\n");
+
+  const updatedStudents = rawNames
+    .map(n => n.trim())
+    .filter(n => n.length > 0)
+    .map((name, idx) => {
+      const existing = (editingClass.students || [])[idx];
+      return {
+        id: existing ? existing.id : "s_" + Date.now() + "_" + idx,
+        name: name
+      };
+    });
+
+  editingClass.students = updatedStudents;
+
+  const index = appData.classes.findIndex(c => c.id === editingClass.id);
+  if (index !== -1) {
+    appData.classes[index] = editingClass;
+    saveData();
+    alert("Klaswijzigingen opgeslagen!");
     renderClassesList();
-    alert('Klas opgeslagen!');
   }
-};
+}
 
-document.getElementById('btn-delete-class').onclick = () => {
-  if (confirm('Wil je deze klas echt verwijderen?')) {
-    appData.classes = appData.classes.filter(c => c.id !== editingClassId);
-    saveToStorage();
+function createNewClass() {
+  const newClass = {
+    id: "k_" + Date.now(),
+    name: "Nieuwe Klas",
+    schoolYear: appData.currentSchoolYear,
+    students: []
+  };
+  appData.classes.push(newClass);
+  saveData();
+  loadClassInEditor(newClass);
+}
+
+function deleteClass() {
+  if (!editingClass) return;
+  if (confirm(`Weet je zeker dat je klas '${editingClass.name}' wilt verwijderen?`)) {
+    appData.classes = appData.classes.filter(c => c.id !== editingClass.id);
+    saveData();
+    editingClass = null;
     initClassesScreen();
   }
-};
+}
 
-// NIEUW SCHOOLJAAR STARTEN
-document.getElementById('btn-new-schoolyear').onclick = () => {
-  const nextYear = prompt("Voer het nieuwe schooljaar in:", "2026-2027");
-  if (nextYear && nextYear !== appData.currentSchoolYear) {
-    appData.currentSchoolYear = nextYear;
-    saveToStorage();
-    document.getElementById('current-year-badge').innerText = `Schooljaar: ${appData.currentSchoolYear}`;
-    alert(`Overgestapt naar schooljaar ${nextYear}. De evaluatiehistoriek van je leerlingen blijft bewaard!`);
+function startNewSchoolYear() {
+  const newYear = prompt("Voer de naam van het nieuwe schooljaar in (bijv. 2026-2027):", "2026-2027");
+  if (newYear) {
+    appData.currentSchoolYear = newYear;
+    saveData();
+    updateSchoolYearBadge();
     initClassesScreen();
+    alert(`Schooljaar gewijzigd naar ${newYear}. Je kunt nu nieuwe klassen aanmaken.`);
   }
-};
+}
 
-// SCHERM 4: GEBRUIKERS & WACHTWOORD BEHEREN
+function exportOverviewClassPDF() {
+  const taskId = document.getElementById("overview-task-select").value;
+  if (!taskId) {
+    alert("Selecteer een opdracht.");
+    return;
+  }
+  currentSelectedTask = appData.tasks.find(t => t.id === taskId);
+  currentSelectedClass = editingClass;
+  exportClassPDF();
+}
+
+/* ==========================================================================
+   SCHERM 4: GEBRUIKERS & WACHTWOORD BEHEREN
+   ========================================================================== */
+
 function initUsersScreen() {
-  document.getElementById('current-logged-user').innerText = `Ingelogd als: ${currentUser ? currentUser.username : '-'}`;
   renderUsersList();
+  const loggedEl = document.getElementById("current-logged-user");
+  if (currentUser) {
+    loggedEl.textContent = `Ingelogd als: ${currentUser.username}`;
+  }
 }
 
 function renderUsersList() {
-  const list = document.getElementById('users-list');
-  list.innerHTML = appData.users.map(u => `<li>${u.username}</li>`).join('');
+  const ul = document.getElementById("users-list");
+  ul.innerHTML = "";
+
+  appData.users.forEach(u => {
+    const li = document.createElement("li");
+    li.textContent = u.username;
+    ul.appendChild(li);
+  });
 }
 
-document.getElementById('btn-add-user').onclick = () => {
-  const u = document.getElementById('new-username').value.trim();
-  const p = document.getElementById('new-password').value.trim();
+function createNewUser() {
+  const userIn = document.getElementById("new-username").value.trim();
+  const passIn = document.getElementById("new-password").value.trim();
 
-  if (!u || !p) {
-    alert('Vul een gebruikersnaam en wachtwoord in.');
+  if (!userIn || !passIn) {
+    alert("Vul een gebruikersnaam en wachtwoord in.");
     return;
   }
 
-  if (appData.users.some(usr => usr.username.toLowerCase() === u.toLowerCase())) {
-    alert('Deze gebruikersnaam bestaat al!');
+  const exists = appData.users.some(u => u.username.toLowerCase() === userIn.toLowerCase());
+  if (exists) {
+    alert("Gebruikersnaam bestaat al.");
     return;
   }
 
-  appData.users.push({ username: u, password: p });
-  saveToStorage();
-  document.getElementById('new-username').value = '';
-  document.getElementById('new-password').value = '';
+  appData.users.push({
+    id: "u_" + Date.now(),
+    username: userIn,
+    password: passIn
+  });
+
+  saveData();
+  document.getElementById("new-username").value = "";
+  document.getElementById("new-password").value = "";
   renderUsersList();
-  alert(`Gebruiker ${u} aangemaakt!`);
-};
+  alert("Nieuwe gebruiker aangemaakt!");
+}
 
-document.getElementById('btn-change-password').onclick = () => {
-  const newP = document.getElementById('change-password-input').value.trim();
-  if (!newP) {
-    alert('Vul een nieuw wachtwoord in.');
+function changePassword() {
+  const passIn = document.getElementById("change-password-input").value.trim();
+  if (!passIn) {
+    alert("Voer een nieuw wachtwoord in.");
     return;
   }
 
-  const usr = appData.users.find(u => u.username === currentUser.username);
-  if (usr) {
-    usr.password = newP;
-    currentUser.password = newP;
-    saveToStorage();
-    document.getElementById('change-password-input').value = '';
-    alert('Je wachtwoord is gewijzigd!');
+  if (currentUser) {
+    currentUser.password = passIn;
+    const uIndex = appData.users.findIndex(u => u.id === currentUser.id);
+    if (uIndex !== -1) {
+      appData.users[uIndex].password = passIn;
+      saveData();
+      document.getElementById("change-password-input").value = "";
+      alert("Wachtwoord succesvol gewijzigd!");
+    }
   }
-};
+}
