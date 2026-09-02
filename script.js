@@ -649,17 +649,23 @@ function exportStudentPDF() {
         <p>Deze tekst moet zichtbaar zijn.</p>
     `;
 
-    document.body.appendChild(div);
-
     div.style.background = "white";
     div.style.padding = "20px";
 
-    html2pdf()
-        .set({
-            filename: "TEST.pdf"
-        })
-        .from(div)
-        .save();
+    document.body.appendChild(div);
+
+    html2canvas(div).then(canvas => {
+
+        document.body.appendChild(canvas);
+
+        alert(
+            "Canvas gemaakt: "
+            + canvas.width
+            + " x "
+            + canvas.height
+        );
+
+    });
 
 }
 function exportClassPDF() {
