@@ -9,7 +9,6 @@
 </head>
 <body>
 
-  <!-- Bovenbalk & Navigatie -->
   <header class="navbar">
     <div class="nav-brand">
       <h2>Evaluatietool</h2>
@@ -24,7 +23,6 @@
   <!-- SCHERM 1: EVALUATIEMODUS -->
   <section id="screen-eval" class="app-screen active">
     <div class="layout-grid">
-      <!-- Zijbalk Selectie -->
       <aside class="sidebar-card">
         <h3>Selectie</h3>
         <div class="field-group">
@@ -40,11 +38,17 @@
         <ul id="eval-student-list" class="selectable-list"></ul>
       </aside>
 
-      <!-- Hoofdvenster Evaluatie -->
       <main class="main-card">
         <div class="eval-header-info">
-          <h2 id="eval-student-title">Selecteer een leerling</h2>
-          <span id="eval-task-subtitle" class="badge">Opdracht: -</span>
+          <div>
+            <h2 id="eval-student-title">Selecteer een leerling</h2>
+            <span id="eval-task-subtitle" class="badge">Opdracht: -</span>
+          </div>
+          <!-- Totale score weergave -->
+          <div class="total-score-box">
+            <span class="score-label">Totale score:</span>
+            <span id="eval-total-score" class="score-value">0 / 0</span>
+          </div>
         </div>
 
         <div id="eval-rubrics-wrapper"></div>
@@ -65,7 +69,6 @@
   <!-- SCHERM 2: DASHBOARD (OPDRACHTEN & RUBRICS) -->
   <section id="screen-dashboard" class="app-screen">
     <div class="layout-grid">
-      <!-- Zijbalk Opdrachten -->
       <aside class="sidebar-card">
         <div class="sidebar-header">
           <h3>Opdrachten</h3>
@@ -74,7 +77,6 @@
         <ul id="dashboard-task-list" class="selectable-list"></ul>
       </aside>
 
-      <!-- Hoofdvenster Opdracht Editor -->
       <main class="main-card">
         <h2>Opdracht & Rubrics Bewerken</h2>
         
