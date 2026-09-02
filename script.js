@@ -671,38 +671,19 @@ function exportStudentPDF() {
   );
 
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
-  
-  const container = document.createElement("div");
-  container.style.position = "fixed";
-  container.style.top = "0";
-  container.style.left = "0";
-  container.style.opacity = "0";
-  container.style.pointerEvents = "none";
-  container.style.width = "210mm";
-  container.style.backgroundColor = "#ffffff";
+  const htmlString = `<div style="padding: 10mm; background: #ffffff; font-family: sans-serif;">${bouwPdfHtml(data)}</div>`;
 
-  const pageDiv = document.createElement("div");
-  pageDiv.className = "pdf-page-container";
-  pageDiv.style.width = "210mm";
-  pageDiv.style.boxSizing = "border-box";
-  pageDiv.innerHTML = bouwPdfHtml(data);
-  container.appendChild(pageDiv);
-  
-  document.body.appendChild(container);
-
-  const opt = {
-    margin: [10, 10, 10, 10],
-    filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-  
-  html2pdf().set(opt).from(container).save().then(() => {
-    document.body.removeChild(container);
-  });
+  html2pdf()
+    .from(htmlString)
+    .set({
+      margin: 10,
+      filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    })
+    .save();
 }
-
 function exportClassPDF() {
   const activeClass = currentSelectedClass || editingClass;
   if (!activeClass || !currentSelectedTask) {
@@ -710,15 +691,7 @@ function exportClassPDF() {
     return;
   }
 
-  const container = document.createElement("div");
-  container.style.position = "fixed";
-  container.style.top = "0";
-  container.style.left = "0";
-  container.style.opacity = "0";
-  container.style.pointerEvents = "none";
-  container.style.width = "210mm";
-  container.style.backgroundColor = "#ffffff";
-
+  let combinedHtml = "";
   activeClass.students.forEach((student, index) => {
     const evalData = appData.evaluations.find(
       e => e.studentId === student.id && 
@@ -727,33 +700,22 @@ function exportClassPDF() {
     );
     const data = verzamelPdfData(student, currentSelectedTask, evalData);
     
-    const pageDiv = document.createElement("div");
-    pageDiv.className = "pdf-page-container";
-    pageDiv.style.width = "210mm";
-    pageDiv.style.boxSizing = "border-box";
-    pageDiv.innerHTML = bouwPdfHtml(data);
-    
-    if (index < activeClass.students.length - 1) {
-      pageDiv.style.pageBreakAfter = "always";
-      pageDiv.style.breakAfter = "page";
-    }
-    container.appendChild(pageDiv);
+    combinedHtml += `<div style="padding: 10mm; background: #ffffff; font-family: sans-serif; ${index < activeClass.students.length - 1 ? 'page-break-after: always; break-after: page;' : ''}">
+      ${bouwPdfHtml(data)}
+    </div>`;
   });
 
-  document.body.appendChild(container);
-
-  const opt = {
-    margin: [10, 10, 10, 10],
-    filename: `Klas_Evaluatie_${activeClass.name}_${currentSelectedTask.title}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-    pagebreak: { mode: ['css', 'legacy'] },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-  
-  html2pdf().set(opt).from(container).save().then(() => {
-    document.body.removeChild(container);
-  });
+  html2pdf()
+    .from(combinedHtml)
+    .set({
+      margin: 10,
+      filename: `Klas_Evaluatie_${activeClass.name}_${currentSelectedTask.title}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      pagebreak: { mode: ['css', 'legacy'] },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    })
+    .save();
 }
 /* ==========================================================================
    SCHERM 2: DASHBOARD
