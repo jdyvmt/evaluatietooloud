@@ -1,4 +1,4 @@
-// Oorspronkelijk flexibel Datamodel
+// Datamodel met maxScore per criterium
 const DEFAULT_APP_STATE = {
   tasks: [
     {
@@ -8,19 +8,21 @@ const DEFAULT_APP_STATE = {
         {
           id: "crit-1",
           title: "Inhoud & Opbouw",
+          maxScore: 10,
           levels: [
-            { score: 1, text: "Inhoud is onvolledig en mist structuur." },
-            { score: 2, text: "Inhoud is basaal, de structuur is voldoende." },
-            { score: 3, text: "Grondige inhoud met een zeer heldere opbouw." }
+            { score: 3, text: "Inhoud is onvolledig en mist structuur." },
+            { score: 7, text: "Inhoud is basaal, de structuur is voldoende." },
+            { score: 10, text: "Grondige inhoud met een zeer heldere opbouw." }
           ]
         },
         {
           id: "crit-2",
           title: "Lichaamstaal & Oogcontact",
+          maxScore: 5,
           levels: [
             { score: 1, text: "Weinig oogcontact en een gesloten houding." },
-            { score: 2, text: "Voldoende oogcontact, rustige houding." },
-            { score: 3, text: "Zeer overtuigend en natuurlijk oogcontact." }
+            { score: 3, text: "Voldoende oogcontact, rustige houding." },
+            { score: 5, text: "Zeer overtuigend en natuurlijk oogcontact." }
           ]
         }
       ]
@@ -46,7 +48,7 @@ function saveToStorage() {
   localStorage.setItem('evalToolData', JSON.stringify(appData));
 }
 
-// Navigatie-afhandeling
+// Navigatie
 const screens = {
   eval: document.getElementById('screen-eval'),
   dashboard: document.getElementById('screen-dashboard'),
@@ -132,7 +134,14 @@ function renderRubrics() {
   task.criteria.forEach(crit => {
     const block = document.createElement('div');
     block.className = 'rubric-block';
-    block.innerHTML = `<h4>${crit.title}</h4>`;
+    
+    const max = crit.maxScore || 10;
+    block.innerHTML = `
+      <div class="rubric-header">
+        <h4>${crit.title}</h4>
+        <span class="badge">Max: ${max} ptn</span>
+      </div>
+    `;
 
     const flex = document.createElement('div');
     flex.className = 'levels-flex';
@@ -140,10 +149,11 @@ function renderRubrics() {
     crit.levels.forEach(lvl => {
       const btn = document.createElement('button');
       btn.className = `level-button ${currentScores[crit.id] === lvl.score ? 'selected' : ''}`;
-      btn.innerHTML = `<strong>Niveau ${lvl.score}</strong><br><small>${lvl.text}</small>`;
+      btn.innerHTML = `<strong>${lvl.score} / ${max} ptn</strong><br><small>${lvl.text}</small>`;
       btn.onclick = () => {
         currentScores[crit.id] = lvl.score;
         renderRubrics();
+        calculateTotalScore();
         buildAutomaticFeedback();
       };
       flex.appendChild(btn);
@@ -152,6 +162,27 @@ function renderRubrics() {
     block.appendChild(flex);
     container.appendChild(block);
   });
+
+  calculateTotalScore();
+}
+
+function calculateTotalScore() {
+  const task = appData.tasks.find(t => t.id === selectedTaskId);
+  if (!task) return;
+
+  let totalEarned = 0;
+  let totalMax = 0;
+
+  task.criteria.forEach(crit => {
+    const max = Number(crit.maxScore) || 0;
+    totalMax += max;
+
+    if (currentScores[crit.id] !== undefined) {
+      totalEarned += Number(currentScores[crit.id]);
+    }
+  });
+
+  document.getElementById('eval-total-score').innerText = `${totalEarned} / ${totalMax}`;
 }
 
 function buildAutomaticFeedback() {
@@ -161,7 +192,7 @@ function buildAutomaticFeedback() {
   let feedbackLines = [];
   task.criteria.forEach(crit => {
     const score = currentScores[crit.id];
-    if (score) {
+    if (score !== undefined) {
       const lvl = crit.levels.find(l => l.score === score);
       if (lvl && lvl.text) feedbackLines.push(`- ${crit.title}: ${lvl.text}`);
     }
@@ -227,18 +258,24 @@ function renderCriteriaEditor(task) {
     const box = document.createElement('div');
     box.className = 'criterion-editor-box';
     box.innerHTML = `
-      <div class="field-group">
-        <label>Criterium Titel:</label>
-        <input type="text" value="${crit.title}" onchange="appData.tasks.find(t => t.id === '${task.id}').criteria[${cIdx}].title = this.value">
+      <div class="criterion-header-inputs">
+        <div class="field-group">
+          <label>Criterium Titel:</label>
+          <input type="text" value="${crit.title}" onchange="appData.tasks.find(t => t.id === '${task.id}').criteria[${cIdx}].title = this.value">
+        </div>
+        <div class="field-group">
+          <label>Max. Punten:</label>
+          <input type="number" min="1" value="${crit.maxScore || 10}" onchange="appData.tasks.find(t => t.id === '${task.id}').criteria[${cIdx}].maxScore = parseInt(this.value)">
+        </div>
       </div>
-      <label class="field-group label">Niveaus & Feedback:</label>
+      <label class="field-group label">Niveaus (Punten & Feedback):</label>
     `;
 
     crit.levels.forEach((lvl, lIdx) => {
       const row = document.createElement('div');
       row.className = 'level-editor-row';
       row.innerHTML = `
-        <input type="number" value="${lvl.score}" onchange="appData.tasks.find(t => t.id === '${task.id}').criteria[${cIdx}].levels[${lIdx}].score = parseInt(this.value)">
+        <input type="number" value="${lvl.score}" placeholder="Punten" onchange="appData.tasks.find(t => t.id === '${task.id}').criteria[${cIdx}].levels[${lIdx}].score = parseInt(this.value)">
         <input type="text" value="${lvl.text}" placeholder="Feedbacktekst" onchange="appData.tasks.find(t => t.id === '${task.id}').criteria[${cIdx}].levels[${lIdx}].text = this.value">
         <button class="btn btn-sm btn-danger" onclick="deleteLevel('${task.id}', ${cIdx}, ${lIdx})">X</button>
       `;
@@ -249,7 +286,7 @@ function renderCriteriaEditor(task) {
     addLvlBtn.className = 'btn btn-sm btn-secondary mt-3';
     addLvlBtn.innerText = '+ Niveau Toevoegen';
     addLvlBtn.onclick = () => {
-      task.criteria[cIdx].levels.push({ score: crit.levels.length + 1, text: '' });
+      task.criteria[cIdx].levels.push({ score: 0, text: '' });
       renderCriteriaEditor(task);
     };
     box.appendChild(addLvlBtn);
@@ -266,7 +303,7 @@ function deleteLevel(taskId, cIdx, lIdx) {
 document.getElementById('btn-add-criterion').onclick = () => {
   const task = appData.tasks.find(t => t.id === editingTaskId);
   if (!task) return;
-  task.criteria.push({ id: `crit-${Date.now()}`, title: "Nieuw Criterium", levels: [{ score: 1, text: "" }] });
+  task.criteria.push({ id: `crit-${Date.now()}`, title: "Nieuw Criterium", maxScore: 10, levels: [{ score: 0, text: "" }] });
   renderCriteriaEditor(task);
 };
 
