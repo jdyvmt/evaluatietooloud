@@ -11,13 +11,14 @@
 </head>
 <body>
 
+ <!-- Inlogscherm -->
   <div id="login-screen" class="container card">
     <h1>Toegang Evaluatietool</h1>
     <p>Voer het wachtwoord in om door te gaan.</p>
-    <div class="form-group">
-      <input type="password" id="password-input" placeholder="Wachtwoord...">
-      <button onclick="checkPassword()" class="btn-primary">Inloggen</button>
-    </div>
+    <form onsubmit="handleLogin(event)" class="form-group">
+      <input type="password" id="password-input" placeholder="Wachtwoord..." required>
+      <button type="submit" class="btn-primary" style="margin-top: 10px;">Inloggen</button>
+    </form>
     <p id="login-error" class="error-msg"></p>
   </div>
 
