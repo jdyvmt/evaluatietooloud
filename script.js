@@ -1549,3 +1549,4 @@ function moveLevel(criterionIdx, levelIdx, direction) {
   
   renderCriteriaEditor();
 }
+alert("html2pdf = " + typeof html2pdf);
