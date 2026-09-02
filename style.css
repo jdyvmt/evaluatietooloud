@@ -285,4 +285,19 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
   .eval-header-info { flex-direction: column; align-items: stretch; }
   .eval-header-right { justify-content: space-between; }
 }
-
+.criterion-editor-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  cursor: grab; /* Geeft een handje-icoon om te slepen */
+  user-select: none;
+}
+.criterion-editor-box:active {
+  cursor: grabbing;
+}
+.criterion-editor-box.dragging {
+  opacity: 0.4;
+  background: #e2e8f0;
+}
