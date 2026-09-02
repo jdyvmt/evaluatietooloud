@@ -1,268 +1,348 @@
-// Dynamisch Datamodel in LocalStorage
-const DEFAULT_DATA = {
+// Oorspronkelijk flexibel Datamodel
+const DEFAULT_APP_STATE = {
   tasks: [
     {
-      id: "task-1",
+      id: "task-demo-1",
       title: "Spreken: Presentatie",
       criteria: [
         {
           id: "crit-1",
           title: "Inhoud & Opbouw",
           levels: [
-            { score: 1, label: "Onvoldoende", text: "Inhoud is onvolledig en mist structuur." },
-            { score: 2, label: "Voldoende", text: "Inhoud is basaal, opbouw is helder." },
-            { score: 3, label: "Goed", text: "Diepgaande inhoud met een zeer sterke structuur." }
+            { score: 1, text: "Inhoud is onvolledig en mist structuur." },
+            { score: 2, text: "Inhoud is basaal, de structuur is voldoende." },
+            { score: 3, text: "Grondige inhoud met een zeer heldere opbouw." }
+          ]
+        },
+        {
+          id: "crit-2",
+          title: "Lichaamstaal & Oogcontact",
+          levels: [
+            { score: 1, text: "Weinig oogcontact en een gesloten houding." },
+            { score: 2, text: "Voldoende oogcontact, rustige houding." },
+            { score: 3, text: "Zeer overtuigend en natuurlijk oogcontact." }
           ]
         }
       ]
     }
   ],
   classes: [
-    { id: "class-1", name: "4 LA", students: ["Jan Peeters", "Sophie Devos", "Lucas Janssens"] }
+    { id: "class-demo-1", name: "4 LA", students: ["Jan Peeters", "Sophie Devos", "Lucas Janssens"] }
   ],
   evaluations: {}
 };
 
-let store = JSON.parse(localStorage.getItem('appStore')) || DEFAULT_DATA;
-let activeTaskId = store.tasks[0]?.id || null;
-let activeClassId = store.classes[0]?.id || null;
-let activeStudent = store.classes[0]?.students[0] || null;
-let activeEvaluations = {};
+// State variabelen
+let appData = JSON.parse(localStorage.getItem('evalToolData')) || DEFAULT_APP_STATE;
+let selectedTaskId = appData.tasks[0]?.id || null;
+let selectedClassId = appData.classes[0]?.id || null;
+let selectedStudent = appData.classes[0]?.students[0] || null;
+let currentScores = {};
 
-function saveData() {
-  localStorage.setItem('appStore', JSON.stringify(store));
+let editingTaskId = null;
+let editingClassId = null;
+
+function saveToStorage() {
+  localStorage.setItem('evalToolData', JSON.stringify(appData));
 }
 
-// Navigation
-const btnEval = document.getElementById('btn-view-eval');
-const btnAdmin = document.getElementById('btn-view-admin');
-const viewEval = document.getElementById('view-eval');
-const viewAdmin = document.getElementById('view-admin');
-
-btnEval.onclick = () => {
-  btnEval.classList.add('active'); btnAdmin.classList.remove('active');
-  viewEval.classList.add('active'); viewAdmin.classList.remove('active');
-  initEvalView();
+// Navigatie-afhandeling
+const screens = {
+  eval: document.getElementById('screen-eval'),
+  dashboard: document.getElementById('screen-dashboard'),
+  classes: document.getElementById('screen-classes')
 };
 
-btnAdmin.onclick = () => {
-  btnAdmin.classList.add('active'); btnEval.classList.remove('active');
-  viewAdmin.classList.add('active'); viewEval.classList.remove('active');
-  initAdminView();
+const navLinks = {
+  eval: document.getElementById('nav-eval'),
+  dashboard: document.getElementById('nav-dashboard'),
+  classes: document.getElementById('nav-classes')
 };
 
-// --- EVALUATIEMODUS ---
-function initEvalView() {
-  const taskSelect = document.getElementById('select-task-eval');
-  const classSelect = document.getElementById('select-klas-eval');
-  
-  taskSelect.innerHTML = store.tasks.map(t => `<option value="${t.id}">${t.title}</option>`).join('');
-  classSelect.innerHTML = store.classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+function switchScreen(targetScreen) {
+  Object.keys(screens).forEach(key => {
+    screens[key].classList.toggle('active', key === targetScreen);
+    navLinks[key].classList.toggle('active', key === targetScreen);
+  });
 
-  taskSelect.value = activeTaskId;
-  classSelect.value = activeClassId;
+  if (targetScreen === 'eval') initEvalScreen();
+  if (targetScreen === 'dashboard') initDashboardScreen();
+  if (targetScreen === 'classes') initClassesScreen();
+}
 
-  taskSelect.onchange = (e) => { activeTaskId = e.target.value; renderStudentList(); renderRubrics(); };
-  classSelect.onchange = (e) => { activeClassId = e.target.value; renderStudentList(); };
+navLinks.eval.onclick = () => switchScreen('eval');
+navLinks.dashboard.onclick = () => switchScreen('dashboard');
+navLinks.classes.onclick = () => switchScreen('classes');
 
-  renderStudentList();
+// --- SCHERM 1: EVALUATIE ---
+function initEvalScreen() {
+  const taskSelect = document.getElementById('eval-task-select');
+  const classSelect = document.getElementById('eval-class-select');
+
+  taskSelect.innerHTML = appData.tasks.map(t => `<option value="${t.id}">${t.title}</option>`).join('');
+  classSelect.innerHTML = appData.classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+  if (selectedTaskId) taskSelect.value = selectedTaskId;
+  if (selectedClassId) classSelect.value = selectedClassId;
+
+  taskSelect.onchange = (e) => { selectedTaskId = e.target.value; renderStudents(); renderRubrics(); };
+  classSelect.onchange = (e) => { selectedClassId = e.target.value; renderStudents(); };
+
+  renderStudents();
   renderRubrics();
 }
 
-function renderStudentList() {
-  const currentClass = store.classes.find(c => c.id === activeClassId);
-  const list = document.getElementById('student-list');
+function renderStudents() {
+  const currentClass = appData.classes.find(c => c.id === selectedClassId);
+  const list = document.getElementById('eval-student-list');
   list.innerHTML = '';
 
-  if (!currentClass) return;
-  
+  if (!currentClass || currentClass.students.length === 0) {
+    list.innerHTML = '<li>Geen leerlingen gevonden</li>';
+    return;
+  }
+
+  if (!currentClass.students.includes(selectedStudent)) {
+    selectedStudent = currentClass.students[0];
+  }
+
   currentClass.students.forEach(student => {
     const li = document.createElement('li');
     li.innerText = student;
-    if (student === activeStudent) li.classList.add('active');
+    if (student === selectedStudent) li.classList.add('active');
     li.onclick = () => {
-      activeStudent = student;
-      renderStudentList();
+      selectedStudent = student;
+      renderStudents();
       loadStudentEvaluation();
     };
     list.appendChild(li);
   });
+
+  loadStudentEvaluation();
 }
 
 function renderRubrics() {
-  const task = store.tasks.find(t => t.id === activeTaskId);
-  const container = document.getElementById('rubric-container');
+  const task = appData.tasks.find(t => t.id === selectedTaskId);
+  const container = document.getElementById('eval-rubrics-wrapper');
   container.innerHTML = '';
 
   if (!task) return;
-  document.getElementById('current-task-name').innerText = `Opdracht: ${task.title}`;
+  document.getElementById('eval-task-subtitle').innerText = `Opdracht: ${task.title}`;
 
   task.criteria.forEach(crit => {
-    const card = document.createElement('div');
-    card.className = 'rubric-card';
-    card.innerHTML = `<h4>${crit.title}</h4>`;
+    const block = document.createElement('div');
+    block.className = 'rubric-block';
+    block.innerHTML = `<h4>${crit.title}</h4>`;
 
-    const grid = document.createElement('div');
-    grid.className = 'levels-grid';
+    const flex = document.createElement('div');
+    flex.className = 'levels-flex';
 
     crit.levels.forEach(lvl => {
       const btn = document.createElement('button');
-      btn.className = `level-btn ${activeEvaluations[crit.id] === lvl.score ? 'selected' : ''}`;
-      btn.innerHTML = `<strong>${lvl.label || 'Niveau ' + lvl.score} (${lvl.score}p)</strong><br><small>${lvl.text}</small>`;
+      btn.className = `level-button ${currentScores[crit.id] === lvl.score ? 'selected' : ''}`;
+      btn.innerHTML = `<strong>Niveau ${lvl.score}</strong><br><small>${lvl.text}</small>`;
       btn.onclick = () => {
-        activeEvaluations[crit.id] = lvl.score;
+        currentScores[crit.id] = lvl.score;
         renderRubrics();
-        updateFeedbackText();
+        buildAutomaticFeedback();
       };
-      grid.appendChild(btn);
+      flex.appendChild(btn);
     });
 
-    card.appendChild(grid);
-    container.appendChild(card);
+    block.appendChild(flex);
+    container.appendChild(block);
   });
 }
 
-function updateFeedbackText() {
-  const task = store.tasks.find(t => t.id === activeTaskId);
+function buildAutomaticFeedback() {
+  const task = appData.tasks.find(t => t.id === selectedTaskId);
   if (!task) return;
 
-  let feedback = [];
+  let feedbackLines = [];
   task.criteria.forEach(crit => {
-    const score = activeEvaluations[crit.id];
+    const score = currentScores[crit.id];
     if (score) {
       const lvl = crit.levels.find(l => l.score === score);
-      if (lvl && lvl.text) feedback.push(`- ${crit.title}: ${lvl.text}`);
+      if (lvl && lvl.text) feedbackLines.push(`- ${crit.title}: ${lvl.text}`);
     }
   });
 
-  document.getElementById('general-feedback').value = feedback.join('\n');
+  document.getElementById('eval-general-feedback').value = feedbackLines.join('\n');
 }
 
 function loadStudentEvaluation() {
-  document.getElementById('current-student-name').innerText = activeStudent || 'Selecteer een leerling';
-  const key = `${activeTaskId}_${activeStudent}`;
-  activeEvaluations = store.evaluations[key]?.scores || {};
-  document.getElementById('general-feedback').value = store.evaluations[key]?.feedback || '';
+  document.getElementById('eval-student-title').innerText = selectedStudent || 'Selecteer een leerling';
+  const key = `${selectedTaskId}_${selectedStudent}`;
+  currentScores = appData.evaluations[key]?.scores || {};
+  document.getElementById('eval-general-feedback').value = appData.evaluations[key]?.feedback || '';
   renderRubrics();
 }
 
-document.getElementById('btn-save-eval').onclick = () => {
-  if (!activeStudent || !activeTaskId) return;
-  const key = `${activeTaskId}_${activeStudent}`;
-  store.evaluations[key] = {
-    scores: activeEvaluations,
-    feedback: document.getElementById('general-feedback').value
+document.getElementById('btn-save-evaluation').onclick = () => {
+  if (!selectedStudent || !selectedTaskId) return;
+  const key = `${selectedTaskId}_${selectedStudent}`;
+  appData.evaluations[key] = {
+    scores: currentScores,
+    feedback: document.getElementById('eval-general-feedback').value
   };
-  saveData();
+  saveToStorage();
   alert('Evaluatie opgeslagen!');
 };
 
-// --- BEHEERMODUS ---
-let editingTask = null;
+document.getElementById('btn-export-pdf').onclick = () => {
+  const el = document.getElementById('screen-eval');
+  html2pdf().from(el).save(`${selectedStudent || 'Evaluatie'}.pdf`);
+};
 
-function initAdminView() {
-  renderAdminTaskList();
-  if (store.tasks.length > 0) editTask(store.tasks[0].id);
+// --- SCHERM 2: DASHBOARD (OPDRACHTEN BEHEREN) ---
+function initDashboardScreen() {
+  renderDashboardTaskList();
+  if (appData.tasks.length > 0) {
+    selectTaskForEditing(appData.tasks[0].id);
+  }
 }
 
-function renderAdminTaskList() {
-  const list = document.getElementById('admin-task-list');
-  list.innerHTML = store.tasks.map(t => `<li class="${editingTask?.id === t.id ? 'active' : ''}" onclick="editTask('${t.id}')">${t.title}</li>`).join('');
+function renderDashboardTaskList() {
+  const list = document.getElementById('dashboard-task-list');
+  list.innerHTML = appData.tasks.map(t => 
+    `<li class="${editingTaskId === t.id ? 'active' : ''}" onclick="selectTaskForEditing('${t.id}')">${t.title}</li>`
+  ).join('');
 }
 
-function editTask(taskId) {
-  editingTask = JSON.parse(JSON.stringify(store.tasks.find(t => t.id === taskId)));
-  renderAdminTaskList();
-  
-  document.getElementById('task-title-input').value = editingTask.title;
-  renderCriteriaEditor();
+function selectTaskForEditing(taskId) {
+  editingTaskId = taskId;
+  renderDashboardTaskList();
+  const task = appData.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  document.getElementById('task-name-input').value = task.title;
+  renderCriteriaEditor(task);
 }
 
-function renderCriteriaEditor() {
-  const container = document.getElementById('criteria-editor-container');
+function renderCriteriaEditor(task) {
+  const container = document.getElementById('editor-criteria-container');
   container.innerHTML = '';
 
-  editingTask.criteria.forEach((crit, cIdx) => {
+  task.criteria.forEach((crit, cIdx) => {
     const box = document.createElement('div');
-    box.className = 'criterion-box';
+    box.className = 'criterion-editor-box';
     box.innerHTML = `
-      <div class="form-group">
-        <label>Titel Criterium:</label>
-        <input type="text" value="${crit.title}" onchange="editingTask.criteria[${cIdx}].title = this.value">
+      <div class="field-group">
+        <label>Criterium Titel:</label>
+        <input type="text" value="${crit.title}" onchange="appData.tasks.find(t => t.id === '${task.id}').criteria[${cIdx}].title = this.value">
       </div>
-      <h4>Niveaus:</h4>
+      <label class="field-group label">Niveaus & Feedback:</label>
     `;
 
     crit.levels.forEach((lvl, lIdx) => {
       const row = document.createElement('div');
-      row.className = 'level-row';
+      row.className = 'level-editor-row';
       row.innerHTML = `
-        <input type="number" value="${lvl.score}" placeholder="Punten" onchange="editingTask.criteria[${cIdx}].levels[${lIdx}].score = parseInt(this.value)">
-        <input type="text" value="${lvl.text}" placeholder="Feedbacktekst voor dit niveau" onchange="editingTask.criteria[${cIdx}].levels[${lIdx}].text = this.value">
-        <button class="btn danger small" onclick="removeLevel(${cIdx}, ${lIdx})">X</button>
+        <input type="number" value="${lvl.score}" onchange="appData.tasks.find(t => t.id === '${task.id}').criteria[${cIdx}].levels[${lIdx}].score = parseInt(this.value)">
+        <input type="text" value="${lvl.text}" placeholder="Feedbacktekst" onchange="appData.tasks.find(t => t.id === '${task.id}').criteria[${cIdx}].levels[${lIdx}].text = this.value">
+        <button class="btn btn-sm btn-danger" onclick="deleteLevel('${task.id}', ${cIdx}, ${lIdx})">X</button>
       `;
       box.appendChild(row);
     });
 
     const addLvlBtn = document.createElement('button');
-    addLvlBtn.className = 'btn secondary small mt-4';
+    addLvlBtn.className = 'btn btn-sm btn-secondary mt-3';
     addLvlBtn.innerText = '+ Niveau Toevoegen';
     addLvlBtn.onclick = () => {
-      editingTask.criteria[cIdx].levels.push({ score: crit.levels.length + 1, label: '', text: '' });
-      renderCriteriaEditor();
+      task.criteria[cIdx].levels.push({ score: crit.levels.length + 1, text: '' });
+      renderCriteriaEditor(task);
     };
     box.appendChild(addLvlBtn);
-
     container.appendChild(box);
   });
 }
 
-function removeLevel(cIdx, lIdx) {
-  editingTask.criteria[cIdx].levels.splice(lIdx, 1);
-  renderCriteriaEditor();
+function deleteLevel(taskId, cIdx, lIdx) {
+  const task = appData.tasks.find(t => t.id === taskId);
+  task.criteria[cIdx].levels.splice(lIdx, 1);
+  renderCriteriaEditor(task);
 }
 
 document.getElementById('btn-add-criterion').onclick = () => {
-  editingTask.criteria.push({
-    id: `crit-${Date.now()}`,
-    title: "Nieuw Criterium",
-    levels: [{ score: 1, label: "Basis", text: "" }]
-  });
-  renderCriteriaEditor();
+  const task = appData.tasks.find(t => t.id === editingTaskId);
+  if (!task) return;
+  task.criteria.push({ id: `crit-${Date.now()}`, title: "Nieuw Criterium", levels: [{ score: 1, text: "" }] });
+  renderCriteriaEditor(task);
 };
 
-document.getElementById('btn-new-task').onclick = () => {
-  const newTask = {
-    id: `task-${Date.now()}`,
-    title: "Nieuwe Opdracht",
-    criteria: []
-  };
-  store.tasks.push(newTask);
-  editTask(newTask.id);
+document.getElementById('btn-add-task').onclick = () => {
+  const newTask = { id: `task-${Date.now()}`, title: "Nieuwe Opdracht", criteria: [] };
+  appData.tasks.push(newTask);
+  selectTaskForEditing(newTask.id);
 };
 
-document.getElementById('btn-save-task').onclick = () => {
-  editingTask.title = document.getElementById('task-title-input').value;
-  const idx = store.tasks.findIndex(t => t.id === editingTask.id);
-  if (idx !== -1) store.tasks[idx] = editingTask;
-  saveData();
-  renderAdminTaskList();
-  alert('Opdracht opgeslagen!');
-};
-
-document.getElementById('btn-delete-task').onclick = () => {
-  if (confirm('Zeker weten dat je deze opdracht wilt verwijderen?')) {
-    store.tasks = store.tasks.filter(t => t.id !== editingTask.id);
-    saveData();
-    initAdminView();
+document.getElementById('btn-save-task-changes').onclick = () => {
+  const task = appData.tasks.find(t => t.id === editingTaskId);
+  if (task) {
+    task.title = document.getElementById('task-name-input').value;
+    saveToStorage();
+    renderDashboardTaskList();
+    alert('Opdracht succesvol opgeslagen!');
   }
 };
 
-// PDF Export
-document.getElementById('btn-pdf-eval').onclick = () => {
-  const element = document.getElementById('view-eval');
-  html2pdf().from(element).save(`${activeStudent || 'Evaluatie'}.pdf`);
+document.getElementById('btn-delete-task').onclick = () => {
+  if (confirm('Wil je deze opdracht echt verwijderen?')) {
+    appData.tasks = appData.tasks.filter(t => t.id !== editingTaskId);
+    saveToStorage();
+    initDashboardScreen();
+  }
+};
+
+// --- SCHERM 3: KLASSENBEHEER ---
+function initClassesScreen() {
+  renderClassesList();
+  if (appData.classes.length > 0) {
+    selectClassForEditing(appData.classes[0].id);
+  }
+}
+
+function renderClassesList() {
+  const list = document.getElementById('classes-class-list');
+  list.innerHTML = appData.classes.map(c => 
+    `<li class="${editingClassId === c.id ? 'active' : ''}" onclick="selectClassForEditing('${c.id}')">${c.name}</li>`
+  ).join('');
+}
+
+function selectClassForEditing(classId) {
+  editingClassId = classId;
+  renderClassesList();
+  const cls = appData.classes.find(c => c.id === classId);
+  if (!cls) return;
+
+  document.getElementById('class-name-input').value = cls.name;
+  document.getElementById('class-students-input').value = cls.students.join('\n');
+}
+
+document.getElementById('btn-add-class').onclick = () => {
+  const newClass = { id: `class-${Date.now()}`, name: "Nieuwe Klas", students: [] };
+  appData.classes.push(newClass);
+  selectClassForEditing(newClass.id);
+};
+
+document.getElementById('btn-save-class-changes').onclick = () => {
+  const cls = appData.classes.find(c => c.id === editingClassId);
+  if (cls) {
+    cls.name = document.getElementById('class-name-input').value;
+    cls.students = document.getElementById('class-students-input').value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    saveToStorage();
+    renderClassesList();
+    alert('Klas opgeslagen!');
+  }
+};
+
+document.getElementById('btn-delete-class').onclick = () => {
+  if (confirm('Wil je deze klas echt verwijderen?')) {
+    appData.classes = appData.classes.filter(c => c.id !== editingClassId);
+    saveToStorage();
+    initClassesScreen();
+  }
 };
 
 // Start
-initEvalView();
+switchScreen('eval');
