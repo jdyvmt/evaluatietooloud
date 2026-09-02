@@ -660,10 +660,16 @@ function bouwPdfHtml(data) {
 
 function exportStudentPDF() {
   if (!currentSelectedStudent || !currentSelectedTask) {
-    alert("Selecteer een leerling en opdracht.");
+    alert("Selecteer eerst een leerling en een opdracht.");
     return;
   }
-  const evalData = appData.evaluations.find(e => e.studentId === currentSelectedStudent.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
+
+  const evalData = appData.evaluations.find(
+    e => e.studentId === currentSelectedStudent.id && 
+         e.taskId === currentSelectedTask.id && 
+         e.schoolYear === appData.currentSchoolYear
+  );
+
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
   
   const container = document.createElement("div");
@@ -675,11 +681,10 @@ function exportStudentPDF() {
   document.body.appendChild(container);
 
   const opt = {
-    margin: 10,
+    margin: [10, 10, 10, 10],
     filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-    pagebreak: { mode: ['css', 'legacy'] },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
   
@@ -689,13 +694,14 @@ function exportStudentPDF() {
 }
 
 function exportClassPDF() {
-  if (!currentSelectedClass || !currentSelectedTask) {
+  const activeClass = currentSelectedClass || editingClass;
+  if (!activeClass || !currentSelectedTask) {
     alert("Selecteer een klas en een opdracht.");
     return;
   }
 
   const container = document.createElement("div");
-  currentSelectedClass.students.forEach((student, index) => {
+  activeClass.students.forEach((student, index) => {
     const evalData = appData.evaluations.find(e => e.studentId === student.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
     const data = verzamelPdfData(student, currentSelectedTask, evalData);
     
@@ -703,8 +709,8 @@ function exportClassPDF() {
     pageDiv.className = "pdf-page-container";
     pageDiv.innerHTML = bouwPdfHtml(data);
     
-    // Voeg een hard page break toe tussen leerlingen (behalve na de laatste)
-    if (index < currentSelectedClass.students.length - 1) {
+    // Voeg harde paginascheiding toe voor html2pdf
+    if (index < activeClass.students.length - 1) {
       pageDiv.style.pageBreakAfter = "always";
       pageDiv.style.breakAfter = "page";
     }
@@ -714,8 +720,8 @@ function exportClassPDF() {
   document.body.appendChild(container);
 
   const opt = {
-    margin: [10, 10, 10, 10], // Voldoende marge rondom zodat de titel niet tegen de rand plakt
-    filename: `Klas_Evaluatie_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`,
+    margin: [10, 10, 10, 10],
+    filename: `Klas_Evaluatie_${activeClass.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
     pagebreak: { mode: ['css', 'legacy'] },
@@ -726,7 +732,6 @@ function exportClassPDF() {
     document.body.removeChild(container);
   });
 }
-
 /* ==========================================================================
    SCHERM 2: DASHBOARD
    ========================================================================== */
@@ -967,6 +972,7 @@ function renderClassesList() {
 
 function loadClassInEditor(c) {
   editingClass = JSON.parse(JSON.stringify(c));
+  currentSelectedClass = c; // Zorg dat deze direct gelijk is aan de actieve klas
   renderClassesList();
 
   document.getElementById("class-name-input").value = editingClass.name;
