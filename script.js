@@ -477,7 +477,7 @@ function renderPresetChips() {
     chip.textContent = text;
     chip.addEventListener("click", () => {
       const textarea = document.getElementById("eval-general-feedback");
-      textarea.value = textarea.value.trim() !== "" ? textarea.value + ", " + text : text;
+      textarea.value = textarea.value.trim() !== "" ? textarea.value + " " + text : text;
     });
     container.appendChild(chip);
   });
