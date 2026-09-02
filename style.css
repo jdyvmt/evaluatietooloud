@@ -87,6 +87,11 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 .criterion-editor-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; }
 .level-editor-row { display: grid; grid-template-columns: 80px 1fr 40px; gap: 0.5rem; margin-top: 0.5rem; align-items: center; }
 
+/* OVERZICHT & FLEX */
+.flex-gap { display: flex; gap: 0.5rem; }
+.overview-eval-row { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; font-size: 0.9rem; }
+.tab-buttons { display: flex; gap: 0.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; }
+
 /* SCHOOLJAAR BEHEER BOX */
 .schoolyear-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 6px; margin-top: 1rem; }
 .schoolyear-box h4 { font-size: 0.9rem; color: #1e293b; margin-bottom: 0.3rem; }
@@ -107,4 +112,7 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 .separator { margin: 1.25rem 0; border: 0; border-top: 1px solid #e2e8f0; }
 .mt-2 { margin-top: 0.5rem; }
 .mt-3 { margin-top: 1rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 1rem; }
 .ml-2 { margin-left: 0.5rem; }
+.text-muted { color: #64748b; font-size: 0.85rem; }
