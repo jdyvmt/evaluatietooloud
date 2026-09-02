@@ -583,41 +583,94 @@ function startRetryEvaluation() {
    PDF EXPORT FUNCTIONALITEIT
    ========================================================================== */
 
+function verzamelPdfData(student, task, evaluation) {
+  let criteriaData = [];
+  let currentTotal = 0;
+  let maxTotal = 0;
+
+  task.criteria.forEach(c => {
+    const w = c.weight || 1;
+    const maxLevelScore = Math.max(...c.levels.map(l => l.score), 0);
+    maxTotal += maxLevelScore * w;
+
+    const scoresObj = evaluation ? evaluation.scores : currentScores;
+    const sel = scoresObj[c.id];
+    const level = sel ? c.levels[sel.levelIndex] : null;
+
+    if (sel) {
+      currentTotal += sel.score * w;
+    }
+
+    criteriaData.push({
+      title: c.title,
+      scoreText: level ? `${level.score} / ${maxLevelScore} pt` : 'Niet beoordeeld',
+      desc: level ? level.desc : '-'
+    });
+  });
+
+  return {
+    titel: task.title,
+    leerling: student.name,
+    klas: currentSelectedClass ? currentSelectedClass.name : '-',
+    schooljaar: appData.currentSchoolYear,
+    datum: evaluation ? evaluation.date : new Date().toLocaleDateString("nl-BE"),
+    criteria: criteriaData,
+    feedback: evaluation ? evaluation.feedback : document.getElementById("eval-general-feedback").value.trim(),
+    eindscore: currentTotal,
+    maxEindscore: maxTotal
+  };
+}
+
+function bouwPdfHtml(data) {
+  let rijen = '';
+  data.criteria.forEach(c => {
+    rijen += `<tr>
+      <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">${c.title}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${c.scoreText}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; color: #475569;">${c.desc}</td>
+    </tr>`;
+  });
+
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 25px; color: #111; font-size: 10pt;">
+      <h2 style="text-transform: uppercase; margin-bottom: 8px; font-size: 14pt;">${data.titel}</h2>
+      <div style="line-height: 1.5; margin-bottom: 15px; font-size: 9pt;">
+        <strong>Leerling:</strong> ${data.leerling} (${data.klas})<br>
+        <strong>Schooljaar:</strong> ${data.schooljaar} | <strong>Leerkracht:</strong> Dhr. J. Vermote<br>
+        <strong>School:</strong> Atheneum Brugge | <strong>Datum:</strong> ${data.datum}
+      </div>
+      <hr style="border: none; border-top: 2px solid #111; margin-bottom: 15px;">
+      
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+        <thead>
+          <tr style="background-color: #f1f5f9; text-align: left; font-size: 8pt; text-transform: uppercase;">
+            <th style="padding: 8px;">Criterium</th>
+            <th style="padding: 8px;">Score</th>
+            <th style="padding: 8px;">Uitleg</th>
+          </tr>
+        </thead>
+        <tbody>${rijen}</tbody>
+      </table>
+
+      <div style="font-size: 8pt; font-weight: bold; text-transform: uppercase; margin-bottom: 4px;">Feedback</div>
+      <div style="background: #f9f9f9; border-left: 3px solid #111; padding: 8px; margin-bottom: 15px; font-size: 9pt;">${data.feedback || 'Geen extra opmerkingen.'}</div>
+
+      <div style="text-align: right; font-weight: bold; font-size: 12pt;">
+        Eindscore: ${data.eindscore} / ${data.maxEindscore}
+      </div>
+    </div>`;
+}
+
 function exportStudentPDF() {
   if (!currentSelectedStudent || !currentSelectedTask) {
     alert("Selecteer een leerling en opdracht.");
     return;
   }
-
+  const evalData = appData.evaluations.find(e => e.studentId === currentSelectedStudent.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
+  const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
+  
   const element = document.createElement("div");
-  element.style.padding = "20px";
-  element.style.fontFamily = "sans-serif";
-
-  const totalScoreText = document.getElementById("eval-total-score").textContent;
-  const mins = Math.floor(timerSeconds / 60).toString().padStart(2, "0");
-  const secs = (timerSeconds % 60).toString().padStart(2, "0");
-
-  element.innerHTML = `
-    <h2>Evaluatierapport: ${currentSelectedStudent.name}</h2>
-    <p><strong>Opdracht:</strong> ${currentSelectedTask.title} | <strong>Datum:</strong> ${new Date().toLocaleDateString("nl-BE")}</p>
-    <p><strong>Spreektijd:</strong> ${mins}:${secs} | <strong>Eindscore:</strong> ${totalScoreText}</p>
-    <hr>
-    <h3>Beoordeling per criterium:</h3>
-    ${currentSelectedTask.criteria.map(c => {
-      const sel = currentScores[c.id];
-      const level = sel ? c.levels[sel.levelIndex] : null;
-      return `
-        <div style="margin-bottom: 12px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <strong>${c.title}</strong> (Gewicht: ${c.weight || 1}x)<br>
-          Niveau: ${level ? `${level.label} (${level.score}pt)` : 'Niet beoordeeld'}<br>
-          <small>${level ? level.desc : ''}</small>
-        </div>
-      `;
-    }).join("")}
-    <hr>
-    <h3>Algemene Feedback:</h3>
-    <p>${document.getElementById("eval-general-feedback").value || 'Geen extra opmerkingen.'}</p>
-  `;
+  element.innerHTML = bouwPdfHtml(data);
 
   const opt = {
     margin: 10,
@@ -626,7 +679,6 @@ function exportStudentPDF() {
     html2canvas: { scale: 2 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-
   html2pdf().set(opt).from(element).save();
 }
 
@@ -636,22 +688,17 @@ function exportClassPDF() {
     return;
   }
 
-  const element = document.createElement("div");
-  element.style.padding = "20px";
-  element.style.fontFamily = "sans-serif";
-
-  element.innerHTML = `<h1>Klassevaluatie: ${currentSelectedClass.name}</h1><h3>Opdracht: ${currentSelectedTask.title}</h3><hr>`;
-
-  currentSelectedClass.students.forEach(student => {
-    const ev = appData.evaluations.find(e => e.studentId === student.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
-
-    element.innerHTML += `
-      <div style="margin-bottom: 20px; page-break-inside: avoid;">
-        <h3>${student.name} - Score: ${ev ? `${ev.totalScore}/${ev.maxScore}` : 'Nog niet geëvalueerd'}</h3>
-        <p><strong>Spreektijd:</strong> ${ev ? ev.timer : '-'} | <strong>Feedback:</strong> ${ev ? (ev.feedback || 'Geen') : '-'}</p>
-        <hr style="border: 0.5px dashed #ccc;">
-      </div>
-    `;
+  const container = document.createElement("div");
+  currentSelectedClass.students.forEach((student, index) => {
+    const evalData = appData.evaluations.find(e => e.studentId === student.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
+    const data = verzamelPdfData(student, currentSelectedTask, evalData);
+    
+    const pageDiv = document.createElement("div");
+    pageDiv.innerHTML = bouwPdfHtml(data);
+    if (index < currentSelectedClass.students.length - 1) {
+      pageDiv.style.pageBreakAfter = "always";
+    }
+    container.appendChild(pageDiv);
   });
 
   const opt = {
@@ -661,8 +708,7 @@ function exportClassPDF() {
     html2canvas: { scale: 2 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-
-  html2pdf().set(opt).from(element).save();
+  html2pdf().set(opt).from(container).save();
 }
 
 /* ==========================================================================
