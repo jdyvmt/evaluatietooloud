@@ -1040,23 +1040,54 @@ function changePassword() {
     }
   }
 }
-function exporteerNaarPdf(evaluatieData) {
-  // 1. Bouw de HTML op
-  const htmlInhoud = bouwPdfHtml(evaluatieData);
+function bouwPdfHtml(data) {
+  // 1. Maak een rij per parameter
+  let rijen = '';
+  data.parameters.forEach(param => {
+    rijen += `
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">${param.naam}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">${param.score} / ${param.max}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${param.criterium}</td>
+      </tr>`;
+  });
 
-  // 2. Maak een onzichtbaar element op de pagina
-  const tijdelijkElement = document.createElement('div');
-  tijdelijkElement.innerHTML = htmlInhoud;
+  // 2. Geef de volledige HTML terug
+  return `
+    <div style="font-family: Helvetica, Arial, sans-serif; padding: 30px; color: #111;">
+      <h2 style="text-transform: uppercase; border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 15px;">
+        ${data.titel}
+      </h2>
+      
+      <p style="font-size: 11pt; color: #444; margin-bottom: 25px;">
+        <strong>Leerling:</strong> ${data.leerling} (${data.klas})<br>
+        <strong>Datum:</strong> ${data.datum} | <strong>Duur:</strong> ${data.duur}
+      </p>
 
-  // 3. Opties voor het PDF-bestand
-  const opties = {
-    margin: 10,
-    filename: `Evaluatie_${evaluatieData.leerling}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; text-align: left;">
+        <thead>
+          <tr style="border-bottom: 1.5px solid #111; font-size: 9pt; text-transform: uppercase; color: #666;">
+            <th style="padding: 8px;">Parameter</th>
+            <th style="padding: 8px;">Score</th>
+            <th style="padding: 8px;">Toegepaste Criteria</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rijen}
+        </tbody>
+      </table>
 
-  // 4. Genereer en download direct
-  html2pdf().set(opties).from(tijdelijkElement).save();
+      <div style="font-size: 9pt; font-weight: bold; text-transform: uppercase; color: #666; margin-bottom: 6px;">
+        Feedback & Opmerkingen
+      </div>
+      <div style="background: #f9f9f9; border-left: 3px solid #111; padding: 12px; margin-bottom: 30px;">
+        ${data.feedback}
+      </div>
+
+      <div style="text-align: right; border-top: 1.5px solid #111; padding-top: 10px;">
+        <span style="font-size: 9pt; text-transform: uppercase; color: #666; font-weight: bold;">Eindscore</span><br>
+        <span style="font-size: 18pt; font-weight: bold;">${data.eindscore} / ${data.maxEindscore}</span>
+      </div>
+    </div>
+  `;
 }
