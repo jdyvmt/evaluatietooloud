@@ -1,238 +1,35 @@
-:root {
-  --bg-color: #f4f6f8;
-  --panel-bg: #ffffff;
-  --primary: #2563eb;
-  --primary-light: #eff6ff;
-  --border-color: #e2e8f0;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
-  --accent-warn: #f59e0b;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+body { background-color: #f4f6f8; color: #333; }
 
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-main);
-}
+.app-header { background: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; }
+.mode-switch { display: flex; gap: 0.5rem; }
+.nav-btn { padding: 0.5rem 1rem; border: 1px solid #ccc; background: #f9f9f9; cursor: pointer; border-radius: 4px; }
+.nav-btn.active { background: #0056b3; color: white; border-color: #0056b3; }
 
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--panel-bg);
-  padding: 12px 24px;
-  border-bottom: 1px solid var(--border-color);
-}
+.view-section { display: none; padding: 2rem; }
+.view-section.active { display: block; }
 
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
+/* Evaluatiemodus Layout */
+.eval-container { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; }
+.sidebar, .eval-card, .admin-card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
 
-.badge {
-  background: var(--primary-light);
-  color: var(--primary);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
+.student-list { list-style: none; margin-top: 1rem; }
+.student-list li { padding: 0.75rem; border-bottom: 1px solid #eee; cursor: pointer; }
+.student-list li:hover, .student-list li.active { background: #eef5ff; font-weight: bold; }
 
-.eval-grid {
-  display: grid;
-  grid-template-columns: 280px 1fr 320px;
-  gap: 16px;
-  padding: 16px;
-  height: calc(100vh - 80px);
-  box-sizing: border-box;
-}
+.rubric-card { background: white; padding: 1rem; margin-bottom: 1rem; border-radius: 6px; border: 1px solid #e0e0e0; }
+.levels-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; margin-top: 0.5rem; }
+.level-btn { padding: 0.5rem; border: 1px solid #ccc; background: #fff; cursor: pointer; border-radius: 4px; text-align: center; }
+.level-btn.selected { background: #28a745; color: white; border-color: #28a745; }
 
-.panel {
-  background: var(--panel-bg);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  padding: 16px;
-  overflow-y: auto;
-}
+textarea { width: 100%; height: 100px; padding: 0.5rem; margin-top: 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
+.action-bar { display: flex; gap: 1rem; }
+.btn { padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.btn.primary { background: #0056b3; color: white; }
+.btn.secondary { background: #6c757d; color: white; }
 
-.form-group {
-  margin-bottom: 12px;
-}
-
-.form-group label {
-  display: block;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-select, textarea {
-  width: 100%;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 8px;
-  box-sizing: border-box;
-}
-
-.history-card {
-  margin-top: 16px;
-  background: #f8fafc;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-}
-
-.history-item {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-color);
-}
-
-.history-item .date {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  display: block;
-}
-
-.aandachtspunt {
-  color: var(--accent-warn);
-  font-size: 0.85rem;
-  margin: 4px 0 0 0;
-}
-
-.criterium-block {
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 16px;
-}
-
-.criterium-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.levels-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.level-card {
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 10px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.level-card:hover {
-  border-color: var(--primary);
-}
-
-.level-card.active {
-  background: var(--primary-light);
-  border-color: var(--primary);
-  outline: 2px solid var(--primary);
-}
-
-.level-card .pts {
-  display: block;
-  font-weight: bold;
-  color: var(--primary);
-  margin-bottom: 4px;
-}
-
-.checkbox-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  margin-bottom: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.checkbox-card:hover {
-  background: var(--primary-light);
-}
-
-.margin-top {
-  margin-top: 16px;
-}
-
-.btn-primary {
-  width: 100%;
-  background: var(--primary);
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.btn-secondary {
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.btn-secondary:hover {
-  background: var(--primary-light);
-  border-color: var(--primary);
-}
-
-/* STYLING VOOR GEGENEREERDE PDF */
-.pdf-page {
-  font-family: Arial, sans-serif;
-  color: #1e293b;
-  padding: 10mm;
-  background: #ffffff;
-}
-
-.pdf-header {
-  display: flex;
-  justify-content: space-between;
-  border-bottom: 2px solid #2563eb;
-  padding-bottom: 12px;
-  margin-bottom: 20px;
-}
-
-.pdf-header h2 {
-  margin: 0 0 4px 0;
-  color: #2563eb;
-}
-
-.pdf-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
-}
-
-.pdf-table th, .pdf-table td {
-  border: 1px solid #cbd5e1;
-  padding: 8px;
-  text-align: left;
-  font-size: 0.9rem;
-}
-
-.pdf-table th {
-  background-color: #f1f5f9;
-}
-
-.pdf-feedback-box {
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  padding: 12px;
-}
+/* Admin Formulieren */
+.admin-criterion-item { background: #f8f9fa; padding: 1rem; border: 1px solid #ddd; margin-bottom: 1rem; border-radius: 4px; }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; margin-bottom: 0.25rem; font-weight: bold; }
+.form-group input { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
