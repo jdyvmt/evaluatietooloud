@@ -679,21 +679,22 @@ function exportStudentPDF() {
   const evalData = appData.evaluations.find(e => e.studentId === currentSelectedStudent.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
   
-  const element = document.createElement("div");
-  element.style.background = "#ffffff";
-  element.style.padding = "10mm";
-  element.innerHTML = bouwPdfHtml(data);
+  const container = document.createElement("div");
+  container.style.background = "#ffffff";
+  container.innerHTML = bouwPdfHtml(data);
+  
+  document.body.appendChild(container); // Cruciaal om CSS te laten renderen
 
-  const opt = {
+  html2pdf().from(container).set({
     margin: 10,
-    filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
+    filename: `Evaluatie_${currentSelectedStudent.name}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', letterRendering: true },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-  html2pdf().set(opt).from(element).save();
+  }).save().then(() => {
+    document.body.removeChild(container);
+  });
 }
-
 function exportClassPDF() {
   if (!currentSelectedClass || !currentSelectedTask) {
     alert("Selecteer een klas en een opdracht.");
