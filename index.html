@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Evaluatietool & Rubrics</title>
   <link rel="stylesheet" href="style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script></head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
 <body>
 
   <!-- SCHERM 0: INLOGSCHERM OVERLAY -->
@@ -30,7 +31,10 @@
   <header class="navbar">
     <div class="nav-brand">
       <h2>Evaluatietool</h2>
-      <span id="current-year-badge" class="badge-year">Schooljaar: -</span>
+      <div class="schoolyear-nav-wrapper">
+        <label for="global-schoolyear-select" style="font-size: 0.75rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Schooljaar:</label>
+        <select id="global-schoolyear-select" class="badge-year-select"></select>
+      </div>
     </div>
     <nav class="nav-menu">
       <button id="nav-eval" class="nav-link active">Evaluatie</button>
@@ -193,6 +197,7 @@
         <div class="tab-buttons mb-3">
           <button id="tab-btn-class-edit" class="btn btn-sm btn-primary">Klas Bewerken</button>
           <button id="tab-btn-class-overview" class="btn btn-sm btn-secondary">Resultaten & PDF Overzicht</button>
+          <button id="tab-btn-student-detail" class="btn btn-sm btn-secondary">Leerling Detailoverzicht</button>
         </div>
 
         <!-- SUB-TAB 1: BEWERKEN -->
@@ -229,6 +234,19 @@
           <hr class="separator">
           <h3>Resultaten per Leerling</h3>
           <div id="class-students-overview-list" class="mt-3"></div>
+        </div>
+
+        <!-- SUB-TAB 3: LEERLING DETAILOVERZICHT -->
+        <div id="tab-content-student-detail" style="display:none;">
+          <h2>Gedetailleerd Leerlingoverzicht Evaluaties</h2>
+          <div class="field-group mt-3">
+            <label for="detail-student-select">Selecteer Leerling:</label>
+            <select id="detail-student-select"></select>
+          </div>
+          <hr class="separator">
+          <div id="student-detail-content" class="mt-3">
+            <p class="text-muted">Selecteer een leerling om alle ingevulde evaluaties, scores en feedback in te zien.</p>
+          </div>
         </div>
       </main>
     </div>
