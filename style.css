@@ -70,9 +70,28 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 /* RUBRICS & CRITERIA WEERGAVE */
 .rubric-block { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; }
 .rubric-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-.levels-flex { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-top: 0.5rem; }
+.levels-flex { 
+  display: flex; 
+  flex-wrap: nowrap; 
+  gap: 0.75rem; 
+  margin-top: 0.5rem; 
+  width: 100%; 
+}
 
-.level-button { padding: 0.75rem; border: 1px solid #cbd5e1; background: #fafafa; border-radius: 6px; cursor: pointer; text-align: left; transition: all 0.15s; display: flex; flex-direction: column; justify-content: space-between; }
+.level-button { 
+  flex: 1; 
+  min-width: 0; 
+  padding: 0.75rem; 
+  border: 1px solid #cbd5e1; 
+  background: #fafafa; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  text-align: left; 
+  transition: all 0.15s; 
+  display: flex; 
+  flex-direction: column; 
+  justify-content: space-between; 
+}
 .level-button:hover { border-color: #94a3b8; background-color: #f8fafc; }
 .level-button.selected { background-color: #f0fdf4; border-color: #16a34a; box-shadow: 0 0 0 1px #16a34a; }
 .level-score-tag { font-weight: 700; color: #1e293b; margin-bottom: 0.3rem; }
