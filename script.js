@@ -673,80 +673,73 @@ function bouwPdfHtml(data) {
 
 function exportStudentPDF() {
   if (!currentSelectedStudent || !currentSelectedTask) {
-    alert("Selecteer eerst een leerling en een opdracht.");
+    alert("Selecteer een leerling en opdracht.");
     return;
   }
-
-  const evalData = appData.evaluations.find(
-    e => e.studentId === currentSelectedStudent.id &&
-         e.taskId === currentSelectedTask.id &&
-         e.schoolYear === appData.currentSchoolYear
-  );
-
+  const evalData = appData.evaluations.find(e => e.studentId === currentSelectedStudent.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
-
-  const container = document.createElement("div");
-  container.style.width = "210mm";
-  container.style.background = "#ffffff";
-  container.innerHTML = bouwPdfHtml(data);
   
-  document.body.appendChild(container);
+  const element = document.createElement("div");
+  element.style.background = "#ffffff";
+  element.style.padding = "10mm";
+  element.innerHTML = bouwPdfHtml(data);
 
-  html2pdf().from(container).set({
+  const opt = {
     margin: 10,
-    filename: `Evaluatie_${currentSelectedStudent.name}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-  }).save().then(() => {
-    document.body.removeChild(container);
-  });
+    filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', letterRendering: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  html2pdf().set(opt).from(element).save();
 }
 
 function exportClassPDF() {
-  const activeClass = currentSelectedClass || editingClass;
-  if (!activeClass || !currentSelectedTask) {
+  if (!currentSelectedClass || !currentSelectedTask) {
     alert("Selecteer een klas en een opdracht.");
     return;
   }
 
+  // Genereer voor elke leerling een apart element zodat html2canvas ze niet verkleint of verknipt
+  const students = currentSelectedClass.students || [];
+  if (students.length === 0) {
+    alert("Deze klas heeft geen leerlingen.");
+    return;
+  }
+
+  // We pakken de eerste leerling als test of we maken een omslag. 
+  // Om de klas-PDF betrouwbaar te houden, exporteren we ze als losse opgaves achter elkaar met correcte paginabreaks:
   const container = document.createElement("div");
-  container.style.width = "210mm";
   container.style.background = "#ffffff";
 
-  activeClass.students.forEach((student, index) => {
-    const evalData = appData.evaluations.find(
-      e => e.studentId === student.id &&
-           e.taskId === currentSelectedTask.id &&
-           e.schoolYear === appData.currentSchoolYear
-    );
-
+  students.forEach((student, index) => {
+    const evalData = appData.evaluations.find(e => e.studentId === student.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
     const data = verzamelPdfData(student, currentSelectedTask, evalData);
-    const page = document.createElement("div");
-    page.style.background = "#ffffff";
-    page.style.fontFamily = "sans-serif";
-    page.style.padding = "10mm";
-
-    if (index < activeClass.students.length - 1) {
-      page.style.pageBreakAfter = "always";
+    
+    const pageDiv = document.createElement("div");
+    pageDiv.style.background = "#ffffff";
+    pageDiv.style.padding = "10mm";
+    pageDiv.style.boxSizing = "border-box";
+    
+    if (index < students.length - 1) {
+      pageDiv.style.pageBreakAfter = "always";
+      pageDiv.style.breakAfter = "page";
     }
 
-    page.innerHTML = bouwPdfHtml(data);
-    container.appendChild(page);
+    pageDiv.innerHTML = bouwPdfHtml(data);
+    container.appendChild(pageDiv);
   });
 
-  document.body.appendChild(container);
-
-  html2pdf().from(container).set({
+  const opt = {
     margin: 10,
-    filename: `Klas_Evaluatie_${activeClass.name}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-    pagebreak: { mode: ["css", "legacy"] },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-  }).save().then(() => {
-    document.body.removeChild(container);
-  });
+    filename: `Klas_Evaluatie_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', letterRendering: true },
+    pagebreak: { mode: ['css', 'legacy'] },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  
+  html2pdf().set(opt).from(container).save();
 }
 /* ==========================================================================
    SCHERM 2: DASHBOARD
