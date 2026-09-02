@@ -44,6 +44,11 @@ let currentScores = {};
 let editingTaskId = null;
 let editingClassId = null;
 
+// Timer variabelen
+let timerInterval = null;
+let timerSeconds = 0;
+let isTimerRunning = false;
+
 function saveToStorage() {
   localStorage.setItem('evalToolData', JSON.stringify(appData));
 }
@@ -75,6 +80,56 @@ function switchScreen(targetScreen) {
 navLinks.eval.onclick = () => switchScreen('eval');
 navLinks.dashboard.onclick = () => switchScreen('dashboard');
 navLinks.classes.onclick = () => switchScreen('classes');
+
+// --- TIMER FUNCTIONALITEIT ---
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function updateTimerDisplay() {
+  const display = document.getElementById('timer-display');
+  if (display) display.innerText = formatTime(timerSeconds);
+}
+
+function startTimer() {
+  if (isTimerRunning) return;
+  isTimerRunning = true;
+  document.getElementById('btn-timer-toggle').innerText = 'Pauze';
+  document.getElementById('btn-timer-toggle').classList.replace('btn-primary', 'btn-danger');
+  
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function stopTimer() {
+  isTimerRunning = false;
+  clearInterval(timerInterval);
+  const btn = document.getElementById('btn-timer-toggle');
+  if (btn) {
+    btn.innerText = 'Start';
+    btn.classList.replace('btn-danger', 'btn-primary');
+  }
+}
+
+function resetTimer() {
+  stopTimer();
+  timerSeconds = 0;
+  updateTimerDisplay();
+}
+
+document.getElementById('btn-timer-toggle').onclick = () => {
+  if (isTimerRunning) {
+    stopTimer();
+  } else {
+    startTimer();
+  }
+};
+
+document.getElementById('btn-timer-reset').onclick = resetTimer;
 
 // --- SCHERM 1: EVALUATIE ---
 function initEvalScreen() {
@@ -190,6 +245,12 @@ function buildAutomaticFeedback() {
   if (!task) return;
 
   let feedbackLines = [];
+  
+  // Voeg optioneel spreektijd toe aan feedback als die er is
+  if (timerSeconds > 0) {
+    feedbackLines.push(`- Totale spreektijd: ${formatTime(timerSeconds)}`);
+  }
+
   task.criteria.forEach(crit => {
     const score = currentScores[crit.id];
     if (score !== undefined) {
@@ -202,19 +263,30 @@ function buildAutomaticFeedback() {
 }
 
 function loadStudentEvaluation() {
+  resetTimer();
   document.getElementById('eval-student-title').innerText = selectedStudent || 'Selecteer een leerling';
   const key = `${selectedTaskId}_${selectedStudent}`;
-  currentScores = appData.evaluations[key]?.scores || {};
-  document.getElementById('eval-general-feedback').value = appData.evaluations[key]?.feedback || '';
+  
+  const savedEval = appData.evaluations[key];
+  currentScores = savedEval?.scores || {};
+  document.getElementById('eval-general-feedback').value = savedEval?.feedback || '';
+  
+  if (savedEval?.speakingTime) {
+    timerSeconds = savedEval.speakingTime;
+    updateTimerDisplay();
+  }
+  
   renderRubrics();
 }
 
 document.getElementById('btn-save-evaluation').onclick = () => {
   if (!selectedStudent || !selectedTaskId) return;
+  stopTimer();
   const key = `${selectedTaskId}_${selectedStudent}`;
   appData.evaluations[key] = {
     scores: currentScores,
-    feedback: document.getElementById('eval-general-feedback').value
+    feedback: document.getElementById('eval-general-feedback').value,
+    speakingTime: timerSeconds
   };
   saveToStorage();
   alert('Evaluatie opgeslagen!');
