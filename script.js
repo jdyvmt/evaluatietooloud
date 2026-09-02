@@ -1040,3 +1040,23 @@ function changePassword() {
     }
   }
 }
+function exporteerNaarPdf(evaluatieData) {
+  // 1. Bouw de HTML op
+  const htmlInhoud = bouwPdfHtml(evaluatieData);
+
+  // 2. Maak een onzichtbaar element op de pagina
+  const tijdelijkElement = document.createElement('div');
+  tijdelijkElement.innerHTML = htmlInhoud;
+
+  // 3. Opties voor het PDF-bestand
+  const opties = {
+    margin: 10,
+    filename: `Evaluatie_${evaluatieData.leerling}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  // 4. Genereer en download direct
+  html2pdf().set(opties).from(tijdelijkElement).save();
+}
