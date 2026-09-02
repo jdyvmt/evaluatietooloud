@@ -553,24 +553,39 @@ function verzamelPdfData(student, task, evaluation) {
   let currentTotal = 0;
   let maxTotal = 0;
 
-  task.criteria.forEach(c => {
-    const maxLevelScore = Math.max(...c.levels.map(l => l.score), 0);
-    maxTotal += maxLevelScore;
+  // Bepaal de juiste bron voor de scores (opgeslagen evaluatie of live selectie)
+  const scoresObj = evaluation ? (evaluation.scores || {}) : currentScores;
 
-    const scoresObj = evaluation ? (evaluation.scores || {}) : currentScores;
-    const sel = scoresObj[c.id];
-    const level = sel ? c.levels[sel.levelIndex] : null;
+  if (task && task.criteria) {
+    task.criteria.forEach(c => {
+      const maxLevelScore = Math.max(...c.levels.map(l => Number(l.score) || 0), 0);
+      maxTotal += maxLevelScore;
 
-    if (sel) {
-      currentTotal += (Number(sel.score) || 0);
-    }
+      const sel = scoresObj[c.id];
+      let earnedScore = 0;
+      let description = 'Niet beoordeeld';
 
-    parameters.push({
-      naam: c.title,
-      score: level ? formatScorePair(level.score, maxLevelScore) : formatScorePair(0, maxLevelScore),
-      criterium: level ? level.desc || level.label : 'Niet beoordeeld'
+      if (sel !== undefined && sel !== null) {
+        // Ondersteun zowel object-notatie ({levelIndex, score}) als directe index/score
+        const levelIndex = typeof sel === 'object' ? sel.levelIndex : sel;
+        earnedScore = typeof sel === 'object' ? Number(sel.score) : Number(c.levels[sel]?.score || 0);
+        
+        if (!isNaN(earnedScore)) {
+          currentTotal += earnedScore;
+        }
+
+        if (c.levels && c.levels[levelIndex]) {
+          description = c.levels[levelIndex].desc || c.levels[levelIndex].label || 'Beoordeeld';
+        }
+      }
+
+      parameters.push({
+        naam: c.title || c.name || 'Criterium',
+        score: formatScorePair(earnedScore, maxLevelScore),
+        criterium: description
+      });
     });
-  });
+  }
 
   const durationStr = evaluation ? evaluation.timer || '00:00' : (() => {
     const mins = Math.floor(timerSeconds / 60).toString().padStart(2, "0");
@@ -578,11 +593,11 @@ function verzamelPdfData(student, task, evaluation) {
     return `${mins}:${secs}`;
   })();
 
-  const className = appData.classes.find(c => (c.students || []).some(s => s.id === student.id))?.name ||
+  const className = appData.classes.find(cls => (cls.students || []).some(s => s.id === student.id))?.name ||
     (currentSelectedClass ? currentSelectedClass.name : '-');
 
   return {
-    titel: task.title,
+    titel: task ? task.title : 'Evaluatie',
     leerling: student.name,
     klas: className,
     schooljaar: evaluation ? evaluation.schoolYear : appData.currentSchoolYear,
@@ -591,7 +606,7 @@ function verzamelPdfData(student, task, evaluation) {
     leerkracht: currentUser ? currentUser.username : "Leerkracht",
     school: "Atheneum Brugge",
     parameters: parameters,
-    feedback: evaluation ? evaluation.feedback || 'Geen extra opmerkingen.' : document.getElementById("eval-general-feedback").value.trim() || 'Geen extra opmerkingen.',
+    feedback: evaluation ? evaluation.feedback || 'Geen extra opmerkingen.' : (document.getElementById("eval-general-feedback")?.value.trim() || 'Geen extra opmerkingen.'),
     eindscore: formatScorePair(currentTotal, maxTotal)
   };
 }
