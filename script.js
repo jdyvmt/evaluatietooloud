@@ -593,7 +593,8 @@ function verzamelPdfData(student, task, evaluation) {
     schooljaar: evaluation ? evaluation.schoolYear : appData.currentSchoolYear,
     datum: evaluation ? evaluation.date : new Date().toLocaleDateString("nl-BE"),
     duur: durationStr,
-    leerkracht: "Dhr. J. Vermote",
+    leerkracht: "dhr. J. Vermote",
+    school: "Atheneum Brugge",
     parameters: parameters,
     feedback: evaluation ? evaluation.feedback || 'Geen extra opmerkingen.' : document.getElementById("eval-general-feedback").value.trim() || 'Geen extra opmerkingen.',
     eindscore: formatScorePair(currentTotal, maxTotal)
@@ -614,14 +615,9 @@ function bouwPdfHtml(data) {
   return `
     <div class="pdf-document">
       <div class="pdf-topline">
-        <div>
-          <h1 class="pdf-title">${data.klas} — ${data.titel}</h1>
-          <div class="pdf-student-line">Leerling: ${data.leerling} - ${data.klas}</div>
-        </div>
-        <div class="pdf-meta-right">
-          <div>Duur: <strong>${data.duur}</strong></div>
-          <div>Datum: <strong>${data.datum}</strong></div>
-        </div>
+        <h1 class="pdf-title">${data.titel}</h1>
+        <div class="pdf-student-line">${data.leerling} &middot; ${data.klas} &middot; ${data.leerkracht} &middot; ${data.schooljaar} &middot; ${data.school}</div>
+        <div class="pdf-meta-right">${data.datum} &middot; ${data.duur}</div>
       </div>
 
       <h2 class="pdf-section-title">Beoordeling per Parameter</h2>
@@ -664,7 +660,7 @@ function exportStudentPDF() {
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
     pagebreak: { mode: ['css', 'legacy'] },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
   html2pdf().set(opt).from(element).save();
 }
@@ -694,7 +690,7 @@ function exportClassPDF() {
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
     pagebreak: { mode: ['css', 'legacy'] },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
   html2pdf().set(opt).from(container).save();
 }
@@ -1084,6 +1080,7 @@ function renderStudentManagementList() {
         <label>Klas</label>
         <select data-student-class>
           ${classes.map(c => `<option value="${c.id}" ${c.id === student.classId ? 'selected' : ''}>${c.name}</option>`).join('')}
+          <option value="__new_class__">+ Nieuwe klas aanmaken...</option>
         </select>
       </div>
       <div class="student-management-actions">
@@ -1093,7 +1090,33 @@ function renderStudentManagementList() {
     `;
 
     row.querySelector('[data-save-student]').addEventListener('click', () => {
-      updateStudentManagement(student.id, row.querySelector('[data-student-name]').value, row.querySelector('[data-student-class]').value);
+      const classSelect = row.querySelector('[data-student-class]');
+      let targetClassId = classSelect.value;
+
+      if (targetClassId === '__new_class__') {
+        const newClassName = prompt('Naam van de nieuwe klas:', 'Nieuwe Klas');
+        if (!newClassName || !newClassName.trim()) {
+          classSelect.value = student.classId;
+          return;
+        }
+
+        const trimmedClassName = newClassName.trim();
+        const existingClass = classes.find(c => c.name.trim().toLowerCase() === trimmedClassName.toLowerCase());
+        if (existingClass) {
+          targetClassId = existingClass.id;
+        } else {
+          const newClass = {
+            id: 'k_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+            name: trimmedClassName,
+            schoolYear: appData.currentSchoolYear,
+            students: []
+          };
+          appData.classes.push(newClass);
+          targetClassId = newClass.id;
+        }
+      }
+
+      updateStudentManagement(student.id, row.querySelector('[data-student-name]').value, targetClassId);
     });
 
     row.querySelector('[data-delete-student]').addEventListener('click', () => {
@@ -1311,11 +1334,54 @@ function initUsersScreen() {
 function renderUsersList() {
   const ul = document.getElementById("users-list");
   ul.innerHTML = "";
+
   appData.users.forEach(u => {
     const li = document.createElement("li");
-    li.textContent = u.username;
+    li.className = "user-list-item";
+
+    const name = document.createElement("span");
+    name.className = "user-name";
+    name.textContent = u.username;
+    li.appendChild(name);
+
+    if (currentUser && currentUser.id === u.id) {
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = "Ingelogd";
+      li.appendChild(badge);
+    } else {
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "btn btn-sm btn-danger";
+      deleteBtn.textContent = "Verwijderen";
+      deleteBtn.addEventListener("click", () => deleteUser(u.id));
+      li.appendChild(deleteBtn);
+    }
+
     ul.appendChild(li);
   });
+}
+
+function deleteUser(userId) {
+  const user = appData.users.find(u => u.id === userId);
+  if (!user) return;
+
+  if (currentUser && currentUser.id === userId) {
+    alert("Je kunt de gebruiker waarmee je momenteel bent ingelogd niet verwijderen. Maak eerst een andere gebruiker aan en log daarmee in.");
+    return;
+  }
+
+  if (appData.users.length <= 1) {
+    alert("Er moet minstens één gebruiker overblijven.");
+    return;
+  }
+
+  if (!confirm(`Weet je zeker dat je gebruiker '${user.username}' wilt verwijderen?`)) return;
+
+  appData.users = appData.users.filter(u => u.id !== userId);
+  saveData();
+  renderUsersList();
+  alert(`Gebruiker '${user.username}' is verwijderd.`);
 }
 
 function createNewUser() {
