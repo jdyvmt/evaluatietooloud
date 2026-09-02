@@ -642,15 +642,30 @@ function bouwPdfHtml(data) {
 
 function exportStudentPDF() {
 
-    console.log("START PDF");
+    let melding = "";
 
-    const div = document.createElement("div");
-    div.innerHTML = "<h1>TEST PDF</h1>";
+    melding += "html2pdf: " + typeof html2pdf + "\n";
 
-    document.body.appendChild(div);
+    try {
 
-    html2pdf(div);
+        const div = document.createElement("div");
+        div.innerHTML = "<h1>TEST PDF</h1>";
 
+        melding += "DIV gemaakt: OK\n";
+
+        alert(melding);
+
+        html2pdf(div);
+
+    } catch(err) {
+
+        alert(
+            melding +
+            "\nFOUT:\n" +
+            err.message
+        );
+
+    }
 }
 function exportClassPDF() {
   const activeClass = currentSelectedClass || editingClass;
