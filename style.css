@@ -172,7 +172,7 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 .pdf-document {
   width: 194mm;
   min-height: 277mm;
-  padding: 10mm 8mm;
+  padding: 4mm 8mm;
   box-sizing: border-box;
   margin: 0 auto;
   background: #ffffff;
