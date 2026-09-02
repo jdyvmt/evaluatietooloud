@@ -641,54 +641,24 @@ function bouwPdfHtml(data) {
 }
 
 function exportStudentPDF() {
-  if (!currentSelectedStudent || !currentSelectedTask) {
-    alert("Selecteer eerst een leerling en een opdracht.");
-    return;
-  }
 
-  const evalData = appData.evaluations.find(
-    e =>
-      e.studentId === currentSelectedStudent.id &&
-      e.taskId === currentSelectedTask.id &&
-      e.schoolYear === appData.currentSchoolYear
-  );
+  const testDiv = document.createElement("div");
 
-  const data = verzamelPdfData(
-    currentSelectedStudent,
-    currentSelectedTask,
-    evalData
-  );
+  testDiv.innerHTML = `
+    <h1>TEST PDF</h1>
+    <p>Werkt dit?</p>
+  `;
 
-  const container = document.createElement("div");
+  testDiv.style.position = "fixed";
+  testDiv.style.left = "0";
+  testDiv.style.top = "0";
+  testDiv.style.background = "white";
+  testDiv.style.zIndex = "999999";
 
-  container.style.background = "white";
-  container.innerHTML = bouwPdfHtml(data);
+  document.body.appendChild(testDiv);
 
-  console.log("PDF HTML:");
-  console.log(container.outerHTML);
+  alert("Zie je TEST PDF linksboven op je scherm?");
 
-  document.body.appendChild(container);
-
-  html2pdf()
-    .from(container)
-    .set({
-      margin: 10,
-      filename: "TEST_PDF.pdf",
-      image: { type: "jpeg", quality: 1 },
-      html2canvas: {
-        scale: 1,
-        useCORS: true
-      },
-      jsPDF: {
-        unit: "mm",
-        format: "a4",
-        orientation: "portrait"
-      }
-    })
-    .save()
-    .then(() => {
-      document.body.removeChild(container);
-    });
 }
 function exportClassPDF() {
   const activeClass = currentSelectedClass || editingClass;
