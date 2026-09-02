@@ -672,105 +672,83 @@ function bouwPdfHtml(data) {
 }
 
 function exportStudentPDF() {
-
   if (!currentSelectedStudent || !currentSelectedTask) {
     alert("Selecteer eerst een leerling en een opdracht.");
     return;
   }
 
   const evalData = appData.evaluations.find(
-    e =>
-      e.studentId === currentSelectedStudent.id &&
-      e.taskId === currentSelectedTask.id &&
-      e.schoolYear === appData.currentSchoolYear
+    e => e.studentId === currentSelectedStudent.id &&
+         e.taskId === currentSelectedTask.id &&
+         e.schoolYear === appData.currentSchoolYear
   );
 
-  const data = verzamelPdfData(
-    currentSelectedStudent,
-    currentSelectedTask,
-    evalData
-  );
+  const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
 
   const container = document.createElement("div");
-  container.innerHTML = `<div style="background:#ffffff;font-family:sans-serif;">${bouwPdfHtml(data)}</div>`;
-
-  // Voeg het tijdelijk toe aan de pagina
+  container.style.position = "absolute";
+  container.style.left = "-9999px";
+  container.style.width = "210mm";
+  container.innerHTML = `<div style="background:#ffffff;font-family:sans-serif;padding:10mm;">${bouwPdfHtml(data)}</div>`;
+  
   document.body.appendChild(container);
 
-  html2pdf()
-    .from(container)
-    .set({
-      margin: 10,
-      filename: `Evaluatie.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-    })
-    .save()
-    .then(() => {
-      // Verwijder het tijdelijke element weer na de download
-      document.body.removeChild(container);
-    });
+  html2pdf().from(container).set({
+    margin: 10,
+    filename: `Evaluatie_${currentSelectedStudent.name}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+  }).save().then(() => {
+    document.body.removeChild(container);
+  });
 }
+
 function exportClassPDF() {
   const activeClass = currentSelectedClass || editingClass;
-
   if (!activeClass || !currentSelectedTask) {
     alert("Selecteer een klas en een opdracht.");
     return;
   }
 
   const container = document.createElement("div");
+  container.style.position = "absolute";
+  container.style.left = "-9999px";
+  container.style.width = "210mm";
 
   activeClass.students.forEach((student, index) => {
     const evalData = appData.evaluations.find(
-      e =>
-        e.studentId === student.id &&
-        e.taskId === currentSelectedTask.id &&
-        e.schoolYear === appData.currentSchoolYear
+      e => e.studentId === student.id &&
+           e.taskId === currentSelectedTask.id &&
+           e.schoolYear === appData.currentSchoolYear
     );
 
-    const data = verzamelPdfData(
-      student,
-      currentSelectedTask,
-      evalData
-    );
-
+    const data = verzamelPdfData(student, currentSelectedTask, evalData);
     const page = document.createElement("div");
-
     page.style.background = "#ffffff";
     page.style.fontFamily = "sans-serif";
+    page.style.padding = "10mm";
 
     if (index < activeClass.students.length - 1) {
       page.style.pageBreakAfter = "always";
     }
 
     page.innerHTML = bouwPdfHtml(data);
-
     container.appendChild(page);
   });
 
-  html2pdf()
-    .from(container)
-    .set({
-      margin: 10,
-      filename: `Klas_Evaluatie_${activeClass.name}_${currentSelectedTask.title}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        letterRendering: true
-      },
-      pagebreak: {
-        mode: ["css", "legacy"]
-      },
-      jsPDF: {
-        unit: "mm",
-        format: "a4",
-        orientation: "portrait"
-      }
-    })
-    .save();
+  document.body.appendChild(container);
+
+  html2pdf().from(container).set({
+    margin: 10,
+    filename: `Klas_Evaluatie_${activeClass.name}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+    pagebreak: { mode: ["css", "legacy"] },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+  }).save().then(() => {
+    document.body.removeChild(container);
+  });
 }
 /* ==========================================================================
    SCHERM 2: DASHBOARD
