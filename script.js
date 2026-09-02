@@ -616,25 +616,31 @@ function bouwPdfHtml(data) {
     <div class="pdf-document">
       <div class="pdf-topline">
         <h1 class="pdf-title">${data.titel}</h1>
-        <div class="pdf-student-line">${data.leerling} &middot; ${data.klas} &middot; ${data.leerkracht} &middot; ${data.schooljaar} &middot; ${data.school}</div>
-        <div class="pdf-meta-right">${data.datum} &middot; ${data.duur}</div>
+        <div class="pdf-student-line">${data.leerling} &middot; ${data.klas}</div>
+        <div class="pdf-meta-line">
+          <span><strong>Datum:</strong> ${data.datum}</span>
+          <span><strong>Spreektijd:</strong> ${data.duur}</span>
+          <span>${data.leerkracht}</span>
+          <span>${data.schooljaar}</span>
+          <span>${data.school}</span>
+        </div>
       </div>
 
-      <h2 class="pdf-section-title">Beoordeling per Parameter</h2>
+      <h2 class="pdf-section-title">Beoordeling</h2>
 
       <table class="pdf-table">
         <thead>
           <tr>
-            <th class="pdf-param">Parameter</th>
+            <th class="pdf-param">Criteria</th>
             <th class="pdf-score">Score</th>
-            <th class="pdf-criteria">Toegepaste Criteria</th>
+            <th class="pdf-criteria">Uitleg</th>
           </tr>
         </thead>
         <tbody>${rijen}</tbody>
       </table>
 
       <div class="pdf-feedback">
-        <div class="pdf-feedback-title">Feedback &amp; Opmerkingen</div>
+        <div class="pdf-feedback-title">Feedback</div>
         <div class="pdf-feedback-text">${data.feedback}</div>
       </div>
 
