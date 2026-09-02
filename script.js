@@ -673,6 +673,13 @@ function exportStudentPDF() {
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
   
   const container = document.createElement("div");
+  // Geef de container een vaste breedte en zorg dat hij buiten beeld staat
+  container.style.position = "absolute";
+  container.style.left = "-9999px";
+  container.style.top = "0";
+  container.style.width = "210mm";
+  container.style.backgroundColor = "#ffffff";
+
   const pageDiv = document.createElement("div");
   pageDiv.className = "pdf-page-container";
   pageDiv.innerHTML = bouwPdfHtml(data);
@@ -684,7 +691,7 @@ function exportStudentPDF() {
     margin: [10, 10, 10, 10],
     filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 800 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
   
@@ -701,15 +708,25 @@ function exportClassPDF() {
   }
 
   const container = document.createElement("div");
+  // Geef ook hier de container een vaste breedte en positionering
+  container.style.position = "absolute";
+  container.style.left = "-9999px";
+  container.style.top = "0";
+  container.style.width = "210mm";
+  container.style.backgroundColor = "#ffffff";
+
   activeClass.students.forEach((student, index) => {
-    const evalData = appData.evaluations.find(e => e.studentId === student.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
+    const evalData = appData.evaluations.find(
+      e => e.studentId === student.id && 
+           e.taskId === currentSelectedTask.id && 
+           e.schoolYear === appData.currentSchoolYear
+    );
     const data = verzamelPdfData(student, currentSelectedTask, evalData);
     
     const pageDiv = document.createElement("div");
     pageDiv.className = "pdf-page-container";
     pageDiv.innerHTML = bouwPdfHtml(data);
     
-    // Voeg harde paginascheiding toe voor html2pdf
     if (index < activeClass.students.length - 1) {
       pageDiv.style.pageBreakAfter = "always";
       pageDiv.style.breakAfter = "page";
@@ -723,7 +740,7 @@ function exportClassPDF() {
     margin: [10, 10, 10, 10],
     filename: `Klas_Evaluatie_${activeClass.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 800 },
     pagebreak: { mode: ['css', 'legacy'] },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
