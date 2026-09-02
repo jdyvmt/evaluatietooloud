@@ -668,6 +668,7 @@ function exportStudentPDF() {
   
   const element = document.createElement("div");
   element.innerHTML = bouwPdfHtml(data);
+  document.body.appendChild(element);
 
   const opt = {
     margin: 0,
@@ -677,7 +678,10 @@ function exportStudentPDF() {
     pagebreak: { mode: ['css', 'legacy'] },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-  html2pdf().set(opt).from(element).save();
+  
+  html2pdf().set(opt).from(element).save().then(() => {
+    document.body.removeChild(element);
+  });
 }
 
 function exportClassPDF() {
@@ -699,6 +703,8 @@ function exportClassPDF() {
     container.appendChild(pageDiv);
   });
 
+  document.body.appendChild(container);
+
   const opt = {
     margin: 0,
     filename: `Klas_Evaluatie_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`,
@@ -707,7 +713,11 @@ function exportClassPDF() {
     pagebreak: { mode: ['css', 'legacy'] },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-  html2pdf().set(opt).from(container).save();
+  
+  html2pdf().set(opt).from(container).save().then(() => {
+    document.body.removeChild(container);
+  });
+}
 }
 
 /* ==========================================================================
