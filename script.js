@@ -643,35 +643,43 @@ function exportStudentPDF() {
 }
 
 function exportClassPDF() {
-  if (!currentSelectedClass || !currentSelectedTask) { alert("Selecteer klas en opdracht."); return; }
-  const container = document.createElement("div");
-  container.style.position = "fixed";
-  container.style.top = "0";
-  container.style.left = "0";
-  container.style.zIndex = "999999";
+  if (!currentSelectedClass || !currentSelectedTask) {
+    alert("Selecteer een klas en een opdracht.");
+    return;
+  }
 
+  const container = document.createElement("div");
+  container.className = "pdf-document-wrapper";
+  
   currentSelectedClass.students.forEach((student, index) => {
     const evalData = appData.evaluations.find(e => e.studentId === student.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
     const data = verzamelPdfData(student, currentSelectedTask, evalData);
+    
     const pageDiv = document.createElement("div");
+    pageDiv.className = "pdf-page-container";
+    pageDiv.innerHTML = bouwPdfHtml(data);
+    
     if (index < currentSelectedClass.students.length - 1) {
       pageDiv.style.pageBreakAfter = "always";
       pageDiv.style.breakAfter = "page";
     }
-    pageDiv.innerHTML = bouwPdfHtml(data);
     container.appendChild(pageDiv);
   });
 
   document.body.appendChild(container);
 
-  html2pdf().from(container).set({
-    margin: 5,
-    filename: `Klas_Evaluatie_${currentSelectedClass.name}.pdf`,
+  const opt = {
+    margin: 0, // Marges worden nu opgevangen door de .pdf-page-container padding
+    filename: `Klas_Evaluatie_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: true },
     pagebreak: { mode: ['css', 'legacy'] },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).save().then(() => document.body.removeChild(container));
+  };
+  
+  html2pdf().set(opt).from(container).save().then(() => {
+    document.body.removeChild(container);
+  });
 }
 /* ==========================================================================
    SCHERM 2: DASHBOARD
