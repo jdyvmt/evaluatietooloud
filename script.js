@@ -789,7 +789,10 @@ function renderCriteriaEditor() {
         <button type="button" class="btn btn-sm btn-secondary" onclick="removeLevelFromCriterion(${cIdx})">− Niveau</button>
       </div>
 
-      <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeCriterion(${cIdx})">Verwijder Criterium</button>
+      <div class="mt-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="duplicateCriterion(${cIdx})">Dupliceer Criterium</button>
+        <button type="button" class="btn btn-sm btn-danger" onclick="removeCriterion(${cIdx})">Verwijder Criterium</button>
+      </div>
     `;
     container.appendChild(box);
 
@@ -1478,4 +1481,20 @@ function changePassword() {
       alert("Wachtwoord gewijzigd!");
     }
   }
+}
+function duplicateCriterion(cIdx) {
+  if (!editingTask || !editingTask.criteria) return;
+  
+  // Maak een diepe kopie van het criterium om objectkoppelingen te vermijden
+  const criterionToCopy = editingTask.criteria[cIdx];
+  const duplicatedCriterion = JSON.parse(JSON.stringify(criterionToCopy));
+  
+  // Geef de kopie eventueel een herkenbare toevoeging aan de titel
+  duplicatedCriterion.title = `${duplicatedCriterion.title} (kopie)`;
+  
+  // Voeg het gekopieerde criterium direct achter het origineel in
+  editingTask.criteria.splice(cIdx + 1, 0, duplicatedCriterion);
+  
+  // Herteken de criteria-editor
+  renderCriteriaEditor();
 }
