@@ -18,8 +18,17 @@ body { background-color: #f4f6f9; color: #2c3e50; }
 .sidebar-card, .main-card, .card-section { background: #ffffff; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 .sidebar-header, .section-header, .eval-header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
 
+/* Evaluatie Header Rechterzijde (Timer + Score) */
+.eval-header-right { display: flex; gap: 1rem; align-items: center; }
+
+/* Timer Box */
+.timer-box { background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 0.5rem 1rem; border-radius: 8px; text-align: center; }
+.timer-label { display: block; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
+.timer-display { font-size: 1.3rem; font-weight: 800; color: #0f172a; font-family: monospace; margin: 0.1rem 0; }
+.timer-controls { display: flex; gap: 0.3rem; justify-content: center; }
+
 /* Score Box in Header */
-.total-score-box { background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 0.5rem 1rem; border-radius: 8px; text-align: right; }
+.total-score-box { background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 0.5rem 1rem; border-radius: 8px; text-align: right; min-width: 120px; }
 .score-label { display: block; font-size: 0.75rem; color: #1e40af; text-transform: uppercase; font-weight: 700; }
 .score-value { font-size: 1.5rem; font-weight: 800; color: #1e3a8a; }
 
