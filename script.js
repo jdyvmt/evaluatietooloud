@@ -667,11 +667,12 @@ function exportStudentPDF() {
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
   
   const element = document.createElement("div");
+  element.className = "pdf-page-container";
   element.innerHTML = bouwPdfHtml(data);
   document.body.appendChild(element);
 
   const opt = {
-    margin: 0,
+    margin: [10, 10, 10, 10],
     filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
@@ -696,9 +697,13 @@ function exportClassPDF() {
     const data = verzamelPdfData(student, currentSelectedTask, evalData);
     
     const pageDiv = document.createElement("div");
+    pageDiv.className = "pdf-page-container";
     pageDiv.innerHTML = bouwPdfHtml(data);
+    
+    // Voeg een hard page break toe tussen leerlingen (behalve na de laatste)
     if (index < currentSelectedClass.students.length - 1) {
       pageDiv.style.pageBreakAfter = "always";
+      pageDiv.style.breakAfter = "page";
     }
     container.appendChild(pageDiv);
   });
@@ -706,7 +711,7 @@ function exportClassPDF() {
   document.body.appendChild(container);
 
   const opt = {
-    margin: 0,
+    margin: [10, 10, 10, 10], // Voldoende marge rondom zodat de titel niet tegen de rand plakt
     filename: `Klas_Evaluatie_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
@@ -1506,11 +1511,14 @@ function changePassword() {
 function duplicateCriterion(cIdx) {
   if (!editingTask || !editingTask.criteria) return;
   
-  // Maak een diepe kopie van het criterium om objectkoppelingen te vermijden
+  // Maak een diepe kopie van het criterium
   const criterionToCopy = editingTask.criteria[cIdx];
   const duplicatedCriterion = JSON.parse(JSON.stringify(criterionToCopy));
   
-  // Geef de kopie eventueel een herkenbare toevoeging aan de titel
+  // GEWICHTIG: Geef de kopie een unieke ID zodat scores niet gekoppeld blijven!
+  duplicatedCriterion.id = "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+  
+  // Geef de titel een herkenbare toevoeging
   duplicatedCriterion.title = `${duplicatedCriterion.title} (kopie)`;
   
   // Voeg het gekopieerde criterium direct achter het origineel in
