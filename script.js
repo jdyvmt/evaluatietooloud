@@ -665,55 +665,102 @@ function exportStudentPDF() {
   }
 
   const evalData = appData.evaluations.find(
-    e => e.studentId === currentSelectedStudent.id && 
-         e.taskId === currentSelectedTask.id && 
-         e.schoolYear === appData.currentSchoolYear
+    e =>
+      e.studentId === currentSelectedStudent.id &&
+      e.taskId === currentSelectedTask.id &&
+      e.schoolYear === appData.currentSchoolYear
   );
 
-  const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
-  const htmlString = `<div style="padding: 10mm; background: #ffffff; font-family: sans-serif;">${bouwPdfHtml(data)}</div>`;
+  const data = verzamelPdfData(
+    currentSelectedStudent,
+    currentSelectedTask,
+    evalData
+  );
+
+  const container = document.createElement("div");
+
+  container.innerHTML = `
+    <div style="background:#ffffff; font-family:sans-serif;">
+      ${bouwPdfHtml(data)}
+    </div>
+  `;
 
   html2pdf()
-    .from(htmlString)
+    .from(container)
     .set({
       margin: 10,
       filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait"
+      }
     })
     .save();
 }
 function exportClassPDF() {
   const activeClass = currentSelectedClass || editingClass;
+
   if (!activeClass || !currentSelectedTask) {
     alert("Selecteer een klas en een opdracht.");
     return;
   }
 
-  let combinedHtml = "";
+  const container = document.createElement("div");
+
   activeClass.students.forEach((student, index) => {
     const evalData = appData.evaluations.find(
-      e => e.studentId === student.id && 
-           e.taskId === currentSelectedTask.id && 
-           e.schoolYear === appData.currentSchoolYear
+      e =>
+        e.studentId === student.id &&
+        e.taskId === currentSelectedTask.id &&
+        e.schoolYear === appData.currentSchoolYear
     );
-    const data = verzamelPdfData(student, currentSelectedTask, evalData);
-    
-    combinedHtml += `<div style="padding: 10mm; background: #ffffff; font-family: sans-serif; ${index < activeClass.students.length - 1 ? 'page-break-after: always; break-after: page;' : ''}">
-      ${bouwPdfHtml(data)}
-    </div>`;
+
+    const data = verzamelPdfData(
+      student,
+      currentSelectedTask,
+      evalData
+    );
+
+    const page = document.createElement("div");
+
+    page.style.background = "#ffffff";
+    page.style.fontFamily = "sans-serif";
+
+    if (index < activeClass.students.length - 1) {
+      page.style.pageBreakAfter = "always";
+    }
+
+    page.innerHTML = bouwPdfHtml(data);
+
+    container.appendChild(page);
   });
 
   html2pdf()
-    .from(combinedHtml)
+    .from(container)
     .set({
       margin: 10,
       filename: `Klas_Evaluatie_${activeClass.name}_${currentSelectedTask.title}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      pagebreak: { mode: ['css', 'legacy'] },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true
+      },
+      pagebreak: {
+        mode: ["css", "legacy"]
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait"
+      }
     })
     .save();
 }
