@@ -159,6 +159,74 @@ button {
   background: #fff;
 }
 
+/* Timer Box Styling */
+.timer-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #eef0ff;
+  border: 1px solid #c5ccff;
+  padding: 12px 18px;
+  border-radius: 8px;
+  margin-top: 15px;
+}
+
+#timer-display {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  font-family: monospace;
+}
+
+/* Evaluatiemodus Score Knoppen */
+.score-btn-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.score-btn {
+  flex: 1;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.score-btn.selected {
+  background: var(--primary-color);
+  color: #ffffff;
+  border-color: var(--primary-color);
+}
+
+.selected-condition-box {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f0f4ff;
+  border-left: 3px solid var(--primary-color);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #1a237e;
+  font-style: italic;
+}
+
+.eval-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border-color);
+}
+
+.total-score-box {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
 /* Utility klassen */
 .hidden {
   display: none;
