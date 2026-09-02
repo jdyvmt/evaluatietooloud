@@ -645,18 +645,20 @@ function exportStudentPDF() {
     const div = document.createElement("div");
 
     div.innerHTML = `
-        <div style="
-            background:white;
-            color:black;
-            font-size:30px;
-            padding:40px;
-            border:5px solid red;
-        ">
-            TEST PDF
-        </div>
+        <h1>TEST PDF</h1>
     `;
 
+    div.style.position = "fixed";
+    div.style.top = "0";
+    div.style.left = "0";
+    div.style.background = "white";
+
     document.body.appendChild(div);
+
+    alert(
+        "Breedte: " + div.offsetWidth +
+        "\nHoogte: " + div.offsetHeight
+    );
 
     html2pdf()
         .from(div)
@@ -1543,3 +1545,7 @@ function moveLevel(criterionIdx, levelIdx, direction) {
   
   renderCriteriaEditor();
 }
+alert(
+    "html2pdf = " + typeof html2pdf +
+    "\nhtml2canvas = " + typeof html2canvas
+);
