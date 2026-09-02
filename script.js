@@ -658,19 +658,9 @@ function exportStudentPDF() {
 
     document.body.appendChild(div);
 
-    html2canvas(div).then(canvas => {
-
-        document.body.appendChild(canvas);
-
-        alert(
-            "Canvas gemaakt: "
-            + canvas.width
-            + " x "
-            + canvas.height
-        );
-
-    });
-
+    html2pdf()
+        .from(div)
+        .save("TEST.pdf");
 }
 function exportClassPDF() {
   const activeClass = currentSelectedClass || editingClass;
@@ -1553,4 +1543,3 @@ function moveLevel(criterionIdx, levelIdx, direction) {
   
   renderCriteriaEditor();
 }
-alert("html2pdf = " + typeof html2pdf);
