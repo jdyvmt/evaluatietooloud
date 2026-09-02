@@ -686,13 +686,9 @@ function exportStudentPDF() {
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
 
   const container = document.createElement("div");
-  container.style.position = "fixed";
-  container.style.top = "0";
-  container.style.left = "0";
-  container.style.opacity = "0";
-  container.style.pointerEvents = "none";
   container.style.width = "210mm";
-  container.innerHTML = `<div style="background:#ffffff;font-family:sans-serif;padding:10mm;">${bouwPdfHtml(data)}</div>`;
+  container.style.background = "#ffffff";
+  container.innerHTML = bouwPdfHtml(data);
   
   document.body.appendChild(container);
 
@@ -715,12 +711,8 @@ function exportClassPDF() {
   }
 
   const container = document.createElement("div");
-  container.style.position = "fixed";
-  container.style.top = "0";
-  container.style.left = "0";
-  container.style.opacity = "0";
-  container.style.pointerEvents = "none";
   container.style.width = "210mm";
+  container.style.background = "#ffffff";
 
   activeClass.students.forEach((student, index) => {
     const evalData = appData.evaluations.find(
