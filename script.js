@@ -1,6 +1,8 @@
-// Datamodel met uitgebreide ondersteuning voor schooljaren, feedbackpresets en herkansingen
+// Datamodel met ondersteuning voor meerdere gebruikers, kopiëren van opdrachten en historiek-PDFs
 const DEFAULT_APP_STATE = {
-  password: "leerkracht123",
+  users: [
+    { username: "jordy", password: "leerkracht123" }
+  ],
   currentSchoolYear: "2025-2026",
   tasks: [
     {
@@ -34,12 +36,12 @@ const DEFAULT_APP_STATE = {
   classes: [
     { id: "class-demo-1", year: "2025-2026", name: "4 LA", students: ["Jan Peeters", "Sophie Devos", "Lucas Janssens"] }
   ],
-  evaluations: [] // Array van objecten: { taskId, studentName, schoolYear, attempt: 1, scores: {}, feedback: "", speakingTime: 0, date: "" }
+  evaluations: []
 };
 
 // State variabelen
-let appData = JSON.parse(localStorage.getItem('evalToolData_v2')) || DEFAULT_APP_STATE;
-let isLoggedIn = false;
+let appData = JSON.parse(localStorage.getItem('evalToolData_v3')) || DEFAULT_APP_STATE;
+let currentUser = null;
 
 let selectedTaskId = appData.tasks[0]?.id || null;
 let selectedClassId = appData.classes.find(c => c.year === appData.currentSchoolYear)?.id || null;
@@ -56,7 +58,7 @@ let timerSeconds = 0;
 let isTimerRunning = false;
 
 function saveToStorage() {
-  localStorage.setItem('evalToolData_v2', JSON.stringify(appData));
+  localStorage.setItem('evalToolData_v3', JSON.stringify(appData));
 }
 
 // INLOGGEN & SESSIE
@@ -64,19 +66,24 @@ document.getElementById('btn-login').onclick = handleLogin;
 document.getElementById('login-password').onkeyup = (e) => { if (e.key === 'Enter') handleLogin(); };
 
 function handleLogin() {
-  const input = document.getElementById('login-password').value;
-  if (input === appData.password) {
-    isLoggedIn = true;
+  const uInput = document.getElementById('login-username').value.trim();
+  const pInput = document.getElementById('login-password').value.trim();
+
+  const foundUser = appData.users.find(u => u.username.toLowerCase() === uInput.toLowerCase() && u.password === pInput);
+
+  if (foundUser) {
+    currentUser = foundUser;
     document.getElementById('screen-login').classList.remove('active');
     document.getElementById('current-year-badge').innerText = `Schooljaar: ${appData.currentSchoolYear}`;
     switchScreen('eval');
   } else {
-    document.getElementById('login-error').innerText = 'Ongeldig wachtwoord!';
+    document.getElementById('login-error').innerText = 'Ongeldige gebruikersnaam of wachtwoord!';
   }
 }
 
 document.getElementById('btn-logout').onclick = () => {
-  isLoggedIn = false;
+  currentUser = null;
+  document.getElementById('login-username').value = '';
   document.getElementById('login-password').value = '';
   document.getElementById('screen-login').classList.add('active');
 };
@@ -85,17 +92,19 @@ document.getElementById('btn-logout').onclick = () => {
 const screens = {
   eval: document.getElementById('screen-eval'),
   dashboard: document.getElementById('screen-dashboard'),
-  classes: document.getElementById('screen-classes')
+  classes: document.getElementById('screen-classes'),
+  users: document.getElementById('screen-users')
 };
 
 const navLinks = {
   eval: document.getElementById('nav-eval'),
   dashboard: document.getElementById('nav-dashboard'),
-  classes: document.getElementById('nav-classes')
+  classes: document.getElementById('nav-classes'),
+  users: document.getElementById('nav-users')
 };
 
 function switchScreen(targetScreen) {
-  if (!isLoggedIn) return;
+  if (!currentUser) return;
   Object.keys(screens).forEach(key => {
     screens[key].classList.toggle('active', key === targetScreen);
     navLinks[key].classList.toggle('active', key === targetScreen);
@@ -104,11 +113,13 @@ function switchScreen(targetScreen) {
   if (targetScreen === 'eval') initEvalScreen();
   if (targetScreen === 'dashboard') initDashboardScreen();
   if (targetScreen === 'classes') initClassesScreen();
+  if (targetScreen === 'users') initUsersScreen();
 }
 
 navLinks.eval.onclick = () => switchScreen('eval');
 navLinks.dashboard.onclick = () => switchScreen('dashboard');
 navLinks.classes.onclick = () => switchScreen('classes');
+navLinks.users.onclick = () => switchScreen('users');
 
 // TIMER FUNCTIONALITEIT
 function formatTime(seconds) {
@@ -226,8 +237,6 @@ function renderStudents() {
 
   filteredStudents.forEach(student => {
     const li = document.createElement('li');
-    
-    // Check of er al een evaluatie is
     const studentEvals = appData.evaluations.filter(e => 
       e.taskId === selectedTaskId && 
       e.studentName === student && 
@@ -304,7 +313,6 @@ function renderRubrics() {
       const btn = document.createElement('button');
       btn.className = `level-button ${currentScores[crit.id] === lvl.score ? 'selected' : ''}`;
       
-      // Duidelijke weergave van criteria en punten
       btn.innerHTML = `
         <div class="level-score-tag">${lvl.score} / ${max} ptn</div>
         <div class="level-desc-text">${lvl.text}</div>
@@ -314,7 +322,7 @@ function renderRubrics() {
         currentScores[crit.id] = lvl.score;
         renderRubrics();
         calculateTotalScore();
-        buildAutomaticFeedback();
+        // Criteriumtekst wordt NIEUT meer automatisch in de feedback gezet
       };
       flex.appendChild(btn);
     });
@@ -345,31 +353,13 @@ function calculateTotalScore() {
   document.getElementById('eval-total-score').innerText = `${totalEarned} / ${totalMax}`;
 }
 
-function buildAutomaticFeedback() {
-  const task = appData.tasks.find(t => t.id === selectedTaskId);
-  if (!task) return;
-
-  let feedbackLines = [];
-  if (timerSeconds > 0) {
-    feedbackLines.push(`- Spreektijd: ${formatTime(timerSeconds)}`);
-  }
-
-  task.criteria.forEach(crit => {
-    const score = currentScores[crit.id];
-    if (score !== undefined) {
-      const lvl = crit.levels.find(l => l.score === score);
-      if (lvl && lvl.text) feedbackLines.push(`- ${crit.title}: ${lvl.text}`);
-    }
-  });
-
-  document.getElementById('eval-general-feedback').value = feedbackLines.join('\n');
-}
-
 function loadStudentEvaluation() {
   resetTimer();
-  document.getElementById('eval-student-title').innerText = selectedStudent ? `${selectedStudent} (Poging ${currentAttempt})` : 'Selecteer een leerling';
   
-  // Ophalen van bestaande evaluatie
+  // Enkel "Herkansing" tonen vanaf poging 2
+  const attemptLabel = currentAttempt > 1 ? ` (Herkansing ${currentAttempt - 1})` : '';
+  document.getElementById('eval-student-title').innerText = selectedStudent ? `${selectedStudent}${attemptLabel}` : 'Selecteer een leerling';
+  
   const existing = appData.evaluations.find(e => 
     e.taskId === selectedTaskId && 
     e.studentName === selectedStudent && 
@@ -389,7 +379,6 @@ function loadStudentEvaluation() {
     document.getElementById('eval-general-feedback').value = '';
   }
 
-  // Herkansing knop tonen indien van toepassing
   const retryBtn = document.getElementById('btn-retry-eval');
   const allAttempts = appData.evaluations.filter(e => e.taskId === selectedTaskId && e.studentName === selectedStudent && e.schoolYear === appData.currentSchoolYear);
   if (allAttempts.length > 0 && selectedStudent) {
@@ -415,7 +404,6 @@ function renderStudentHistory() {
     return;
   }
 
-  // Alle voorgaande evaluaties ophalen van deze leerling
   const previousEvals = appData.evaluations.filter(e => e.studentName === selectedStudent);
 
   if (previousEvals.length === 0) {
@@ -429,10 +417,11 @@ function renderStudentHistory() {
     const taskTitle = task ? task.title : "Onbekende Opdracht";
     let scoreSum = 0;
     Object.values(e.scores).forEach(s => scoreSum += Number(s));
+    const attText = e.attempt > 1 ? ` (Herkansing ${e.attempt - 1})` : '';
 
     return `
       <div class="history-item">
-        <strong>${e.schoolYear} | ${taskTitle} (Poging ${e.attempt || 1}):</strong> ${scoreSum} ptn 
+        <strong>${e.schoolYear} | ${taskTitle}${attText}:</strong> ${scoreSum} ptn 
         <small>(${e.date || 'Datum onbekend'})</small>
         <div><em>"${e.feedback || 'Geen opmerkingen'}"</em></div>
       </div>
@@ -444,6 +433,11 @@ function renderStudentHistory() {
 document.getElementById('btn-save-evaluation').onclick = () => {
   if (!selectedStudent || !selectedTaskId) return;
   stopTimer();
+
+  let fb = document.getElementById('eval-general-feedback').value;
+  if (timerSeconds > 0 && !fb.includes("Spreektijd:")) {
+    fb = `[Spreektijd: ${formatTime(timerSeconds)}]\n` + fb;
+  }
 
   const evalIndex = appData.evaluations.findIndex(e => 
     e.taskId === selectedTaskId && 
@@ -458,7 +452,7 @@ document.getElementById('btn-save-evaluation').onclick = () => {
     schoolYear: appData.currentSchoolYear,
     attempt: currentAttempt,
     scores: currentScores,
-    feedback: document.getElementById('eval-general-feedback').value,
+    feedback: fb,
     speakingTime: timerSeconds,
     date: new Date().toLocaleDateString('nl-BE')
   };
@@ -477,14 +471,44 @@ document.getElementById('btn-save-evaluation').onclick = () => {
 // EXPORT PDF PER LEERLING
 document.getElementById('btn-export-pdf').onclick = () => {
   if (!selectedStudent) return;
-  const el = document.getElementById('screen-eval');
-  html2pdf().from(el).save(`Evaluatie_${selectedStudent}_Poging${currentAttempt}.pdf`);
+  exportSingleStudentPDF(selectedStudent, selectedTaskId, currentAttempt);
 };
+
+function exportSingleStudentPDF(studentName, taskId, attempt) {
+  const task = appData.tasks.find(t => t.id === taskId);
+  const evalData = appData.evaluations.find(e => e.taskId === taskId && e.studentName === studentName && e.attempt === attempt && e.schoolYear === appData.currentSchoolYear);
+
+  const container = document.createElement('div');
+  container.style.padding = '20px';
+  const attLabel = attempt > 1 ? ` (Herkansing ${attempt - 1})` : '';
+
+  let scoreSum = 0;
+  if (evalData && evalData.scores) {
+    Object.values(evalData.scores).forEach(s => scoreSum += Number(s));
+  }
+
+  container.innerHTML = `
+    <h2>Evaluatierapport: ${studentName}${attLabel}</h2>
+    <p><strong>Opdracht:</strong> ${task ? task.title : ''} | <strong>Schooljaar:</strong> ${appData.currentSchoolYear}</p>
+    <p><strong>Datum:</strong> ${evalData ? evalData.date : 'Niet geëvalueerd'}</p>
+    <hr><br>
+    <h3>Totale Score: ${scoreSum} ptn</h3>
+    <br>
+    <h4>Feedback & Opmerkingen:</h4>
+    <p>${evalData && evalData.feedback ? evalData.feedback.replace(/\n/g, '<br>') : 'Geen feedback ingegeven.'}</p>
+  `;
+
+  html2pdf().from(container).save(`Evaluatie_${studentName}_${task ? task.title : 'Rapport'}.pdf`);
+}
 
 // BULK PDF EXPORT PER KLAS
 document.getElementById('btn-export-class-pdf').onclick = () => {
-  const currentClass = appData.classes.find(c => c.id === selectedClassId);
-  const task = appData.tasks.find(t => t.id === selectedTaskId);
+  exportClassPDF(selectedClassId, selectedTaskId);
+};
+
+function exportClassPDF(classId, taskId) {
+  const currentClass = appData.classes.find(c => c.id === classId);
+  const task = appData.tasks.find(t => t.id === taskId);
   if (!currentClass || !task) return;
 
   const container = document.createElement('div');
@@ -494,7 +518,7 @@ document.getElementById('btn-export-class-pdf').onclick = () => {
 
   currentClass.students.forEach(student => {
     const studentEvals = appData.evaluations.filter(e => 
-      e.taskId === selectedTaskId && 
+      e.taskId === taskId && 
       e.studentName === student && 
       e.schoolYear === appData.currentSchoolYear
     );
@@ -506,10 +530,10 @@ document.getElementById('btn-export-class-pdf').onclick = () => {
       studentEvals.forEach(e => {
         let scoreSum = 0;
         Object.values(e.scores).forEach(s => scoreSum += Number(s));
+        const attLabel = e.attempt > 1 ? ` (Herkansing ${e.attempt - 1})` : '';
         container.innerHTML += `
           <div style="border:1px solid #ccc; padding:10px; margin-bottom:15px; border-radius:5px;">
-            <p><strong>Poging ${e.attempt}</strong> (${e.date}) - <strong>Score: ${scoreSum} ptn</strong></p>
-            <p><strong>Spreektijd:</strong> ${formatTime(e.speakingTime || 0)}</p>
+            <p><strong>Poging: ${attLabel || 'Eerste evaluatie'}</strong> (${e.date}) - <strong>Score: ${scoreSum} ptn</strong></p>
             <p><strong>Feedback:</strong><br>${(e.feedback || '').replace(/\n/g, '<br>')}</p>
           </div>
         `;
@@ -519,9 +543,9 @@ document.getElementById('btn-export-class-pdf').onclick = () => {
   });
 
   html2pdf().from(container).save(`Klasrapport_${currentClass.name}_${task.title}.pdf`);
-};
+}
 
-// SCHERM 2: DASHBOARD (OPDRACHTEN BEHEREN)
+// SCHERM 2: DASHBOARD (OPDRACHTEN BEHEREN & KOPIËREN)
 function initDashboardScreen() {
   renderDashboardTaskList();
   if (appData.tasks.length > 0) {
@@ -610,6 +634,21 @@ document.getElementById('btn-add-task').onclick = () => {
   selectTaskForEditing(newTask.id);
 };
 
+// OPDRACHT KOPIËREN
+document.getElementById('btn-copy-task').onclick = () => {
+  const original = appData.tasks.find(t => t.id === editingTaskId);
+  if (!original) return;
+
+  const copiedTask = JSON.parse(JSON.stringify(original));
+  copiedTask.id = `task-${Date.now()}`;
+  copiedTask.title = `${original.title} (Kopie)`;
+
+  appData.tasks.push(copiedTask);
+  saveToStorage();
+  selectTaskForEditing(copiedTask.id);
+  alert('Opdracht succesvol gekopieerd!');
+};
+
 document.getElementById('btn-save-task-changes').onclick = () => {
   const task = appData.tasks.find(t => t.id === editingTaskId);
   if (task) {
@@ -630,7 +669,7 @@ document.getElementById('btn-delete-task').onclick = () => {
   }
 };
 
-// SCHERM 3: KLASSENBEHEER & SCHOOLJAAR
+// SCHERM 3: KLASSENBEHEER & SCORES OVERZICHT
 function initClassesScreen() {
   renderClassesList();
   const currentClasses = appData.classes.filter(c => c.year === appData.currentSchoolYear);
@@ -638,6 +677,22 @@ function initClassesScreen() {
     selectClassForEditing(currentClasses[0].id);
   }
 }
+
+// SUB-TABS BINNEN KLASSEN
+document.getElementById('tab-btn-class-edit').onclick = () => {
+  document.getElementById('tab-content-class-edit').style.display = 'block';
+  document.getElementById('tab-content-class-overview').style.display = 'none';
+  document.getElementById('tab-btn-class-edit').classList.replace('btn-secondary', 'btn-primary');
+  document.getElementById('tab-btn-class-overview').classList.replace('btn-primary', 'btn-secondary');
+};
+
+document.getElementById('tab-btn-class-overview').onclick = () => {
+  document.getElementById('tab-content-class-edit').style.display = 'none';
+  document.getElementById('tab-content-class-overview').style.display = 'block';
+  document.getElementById('tab-btn-class-overview').classList.replace('btn-secondary', 'btn-primary');
+  document.getElementById('tab-btn-class-edit').classList.replace('btn-primary', 'btn-secondary');
+  renderClassOverview();
+};
 
 function renderClassesList() {
   const list = document.getElementById('classes-class-list');
@@ -656,6 +711,51 @@ function selectClassForEditing(classId) {
 
   document.getElementById('class-name-input').value = cls.name;
   document.getElementById('class-students-input').value = cls.students.join('\n');
+  renderClassOverview();
+}
+
+function renderClassOverview() {
+  const cls = appData.classes.find(c => c.id === editingClassId);
+  const taskSelect = document.getElementById('overview-task-select');
+  const listContainer = document.getElementById('class-students-overview-list');
+  
+  if (!cls) return;
+
+  taskSelect.innerHTML = appData.tasks.map(t => `<option value="${t.id}">${t.title}</option>`).join('');
+  document.getElementById('btn-download-overview-class-pdf').onclick = () => {
+    exportClassPDF(cls.id, taskSelect.value);
+  };
+
+  listContainer.innerHTML = '';
+
+  cls.students.forEach(student => {
+    const card = document.createElement('div');
+    card.className = 'card-section mb-2';
+
+    const evals = appData.evaluations.filter(e => e.studentName === student && e.schoolYear === appData.currentSchoolYear);
+
+    let html = `<h4>${student}</h4>`;
+    if (evals.length === 0) {
+      html += `<small class="text-muted">Nog geen evaluaties vastgelegd dit schooljaar.</small>`;
+    } else {
+      evals.forEach(e => {
+        const t = appData.tasks.find(task => task.id === e.taskId);
+        let scoreSum = 0;
+        Object.values(e.scores).forEach(s => scoreSum += Number(s));
+        const attLabel = e.attempt > 1 ? ` (Herkansing ${e.attempt - 1})` : '';
+
+        html += `
+          <div class="overview-eval-row">
+            <span><strong>${t ? t.title : 'Opdracht'}${attLabel}:</strong> ${scoreSum} ptn (${e.date})</span>
+            <button class="btn btn-sm btn-secondary" onclick="exportSingleStudentPDF('${student}', '${e.taskId}', ${e.attempt})">PDF Download</button>
+          </div>
+        `;
+      });
+    }
+
+    card.innerHTML = html;
+    listContainer.appendChild(card);
+  });
 }
 
 document.getElementById('btn-add-class').onclick = () => {
@@ -690,7 +790,57 @@ document.getElementById('btn-new-schoolyear').onclick = () => {
     appData.currentSchoolYear = nextYear;
     saveToStorage();
     document.getElementById('current-year-badge').innerText = `Schooljaar: ${appData.currentSchoolYear}`;
-    alert(`Overgestapt naar schooljaar ${nextYear}. Je kunt nu nieuwe klassen toevoegen. De evaluatiehistoriek van je leerlingen blijft bewaard!`);
+    alert(`Overgestapt naar schooljaar ${nextYear}. De evaluatiehistoriek van je leerlingen blijft bewaard!`);
     initClassesScreen();
+  }
+};
+
+// SCHERM 4: GEBRUIKERS & WACHTWOORD BEHEREN
+function initUsersScreen() {
+  document.getElementById('current-logged-user').innerText = `Ingelogd als: ${currentUser ? currentUser.username : '-'}`;
+  renderUsersList();
+}
+
+function renderUsersList() {
+  const list = document.getElementById('users-list');
+  list.innerHTML = appData.users.map(u => `<li>${u.username}</li>`).join('');
+}
+
+document.getElementById('btn-add-user').onclick = () => {
+  const u = document.getElementById('new-username').value.trim();
+  const p = document.getElementById('new-password').value.trim();
+
+  if (!u || !p) {
+    alert('Vul een gebruikersnaam en wachtwoord in.');
+    return;
+  }
+
+  if (appData.users.some(usr => usr.username.toLowerCase() === u.toLowerCase())) {
+    alert('Deze gebruikersnaam bestaat al!');
+    return;
+  }
+
+  appData.users.push({ username: u, password: p });
+  saveToStorage();
+  document.getElementById('new-username').value = '';
+  document.getElementById('new-password').value = '';
+  renderUsersList();
+  alert(`Gebruiker ${u} aangemaakt!`);
+};
+
+document.getElementById('btn-change-password').onclick = () => {
+  const newP = document.getElementById('change-password-input').value.trim();
+  if (!newP) {
+    alert('Vul een nieuw wachtwoord in.');
+    return;
+  }
+
+  const usr = appData.users.find(u => u.username === currentUser.username);
+  if (usr) {
+    usr.password = newP;
+    currentUser.password = newP;
+    saveToStorage();
+    document.getElementById('change-password-input').value = '';
+    alert('Je wachtwoord is gewijzigd!');
   }
 };
