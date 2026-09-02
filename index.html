@@ -4,15 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Evaluatietool</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- Inter Font -->
+  <link rel="stylesheet" href="style.css?v=3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <!-- Inlogscherm -->
   <div id="login-screen" class="container card">
     <h1>Toegang Evaluatietool</h1>
     <p>Voer het wachtwoord in om door te gaan.</p>
@@ -23,7 +21,6 @@
     <p id="login-error" class="error-msg"></p>
   </div>
 
-  <!-- Hoofd-interface (verborgen tot inloggen) -->
   <div id="app-screen" class="container hidden">
     
     <header class="app-header">
@@ -36,28 +33,52 @@
       <button type="button" class="tab-btn" onclick="switchTab('evalueren')">Evaluatie starten</button>
     </nav>
 
-    <!-- TAB 1: Opdrachtenbeheer -->
     <section id="tab-opdrachten" class="tab-content active">
       <div class="card">
-        <h2>Nieuwe Opdracht Aanmaken</h2>
+        <h2>Opgeslagen Opdrachten / Sjablonen</h2>
+        <div id="saved-assignments-list">
+          <p><em>Nog geen opgeslagen opdrachten. Maak er hieronder een aan.</em></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 id="builder-title">Nieuwe Opdracht Aanmaken</h2>
+        <input type="hidden" id="current-assignment-id">
+        
         <div class="form-group">
           <label for="assignment-title">Titel van de opdracht</label>
           <input type="text" id="assignment-title" placeholder="bv. Spreekopdracht: Debat">
         </div>
-        <p><em>(Hier voegen we zometeen het dynamisch toevoegen van parameters en criteria toe)</em></p>
+
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-color);">
+
+        <h3>Parameters & Criteria</h3>
+        <p style="margin-bottom: 15px; font-size: 0.9rem; color: #555;">
+          Voeg per parameter de specifieke voorwaarden toe voor de scores (schaal 2 tot 0 met halve punten).
+        </p>
+
+        <div id="parameters-container"></div>
+
+        <button type="button" onclick="addParameterField()" class="btn-secondary" style="margin-top: 10px;">
+          + Parameter Toevoegen
+        </button>
+
+        <div style="margin-top: 25px; display: flex; gap: 10px;">
+          <button type="button" onclick="saveAssignment()" class="btn-primary">Opdracht Opslaan</button>
+          <button type="button" onclick="resetAssignmentForm()" class="btn-secondary">Wis / Nieuw</button>
+        </div>
       </div>
     </section>
 
-    <!-- TAB 2: Evaluatiemodus -->
     <section id="tab-evalueren" class="tab-content hidden">
       <div class="card">
-        <h2>Beoordeling</h2>
-        <!-- Timer & Leerling selectie komen hier -->
+        <h2>Evaluatie Starten</h2>
+        <p><em>(In de volgende stap koppelen we hier de live evaluatiemodus met timer en PDF-generator aan)</em></p>
       </div>
     </section>
 
   </div>
 
-  <script src="script.js?v=2"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>
