@@ -44,10 +44,23 @@
             <h2 id="eval-student-title">Selecteer een leerling</h2>
             <span id="eval-task-subtitle" class="badge">Opdracht: -</span>
           </div>
-          <!-- Totale score weergave -->
-          <div class="total-score-box">
-            <span class="score-label">Totale score:</span>
-            <span id="eval-total-score" class="score-value">0 / 0</span>
+          
+          <div class="eval-header-right">
+            <!-- TIMER MODULE -->
+            <div class="timer-box">
+              <span class="timer-label">Spreektijd</span>
+              <div id="timer-display" class="timer-display">00:00</div>
+              <div class="timer-controls">
+                <button id="btn-timer-toggle" class="btn btn-sm btn-primary">Start</button>
+                <button id="btn-timer-reset" class="btn btn-sm btn-secondary">Reset</button>
+              </div>
+            </div>
+
+            <!-- Totale score weergave -->
+            <div class="total-score-box">
+              <span class="score-label">Totale score:</span>
+              <span id="eval-total-score" class="score-value">0 / 0</span>
+            </div>
           </div>
         </div>
 
