@@ -1168,25 +1168,21 @@ function renderStudentDetailContent() {
   });
 }
 
-// Plak hier de unieke URL van je Google Apps Script
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyub340N-mhLzmBy_m6Qi7zrm4wHY4u4GBaBukBC5EGeyy8_s8HJfa0e3mbX9v9l7sp/exec";
+async function slaEvaluatieOpInCloud(payload) {
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyep7bhs2F1VzWfoOUZgpE1QRi_d841ou0BXrMSC4fDWK1mOiEmzD-HPCJTiBOK2sS_/exec";
 
-// 1. Evaluatie opslaan in Google Sheets
-async function slaEvaluatieOpInCloud(evaluatieData) {
   try {
-    await fetch(SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors', // Noodzakelijk voor Google Apps Script cross-origin requests
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(evaluatieData)
+    const response = await fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors", // Nodig voor Google Apps Script Web Apps
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
     });
-    
-    alert("Evaluatie succesvol opgeslagen in de cloud!");
-    // Optioneel: haal direct de nieuwste lijst op
-    laadEvaluatiesUitCloud(); 
-  } catch (err) {
-    console.error("Fout bij opslaan in de cloud:", err);
-    alert("Er ging iets mis bij het opslaan.");
+    console.log("Verzonden naar Google Sheets");
+  } catch (error) {
+    console.error("Fout bij opslaan in cloud:", error);
   }
 }
 
