@@ -626,22 +626,21 @@ function exportStudentPDF() {
 
   const container = document.getElementById("pdf-export-container");
   container.innerHTML = bouwPdfHtml(data);
-  container.style.display = "block";
 
   const opt = {
     margin: 0,
     filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
+  // Korte wachttijd om de DOM de kans te geven het element te renderen
   setTimeout(() => {
     html2pdf().set(opt).from(container).save().then(() => {
-      container.style.display = "none";
       container.innerHTML = "";
     });
-  }, 100);
+  }, 250);
 }
 
 function exportClassPDF() {
@@ -671,22 +670,19 @@ function exportClassPDF() {
     container.appendChild(wrapper);
   });
 
-  container.style.display = "block";
-
   const opt = {
     margin: 0,
     filename: `Klas_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
   setTimeout(() => {
     html2pdf().set(opt).from(container).save().then(() => {
-      container.style.display = "none";
       container.innerHTML = "";
     });
-  }, 100);
+  }, 250);
 }
 
 /* ==========================================================================
