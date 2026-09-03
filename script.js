@@ -74,11 +74,17 @@ function seedDefaultData() {
   saveData();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   loadData();
   setupEventListeners();
   populateGlobalSchoolYearSelect();
   initEvalScreen();
+  
+  // Synchroniseer met de cloud
+  const cloudData = await laadEvaluatiesUitCloud();
+  if (cloudData && Array.isArray(cloudData)) {
+    console.log(`${cloudData.length} evaluaties gesynchroniseerd uit de cloud.`);
+  }
 });
 
 function populateGlobalSchoolYearSelect() {
@@ -430,7 +436,7 @@ function renderPresetChips() {
   });
 }
 
-function saveCurrentEvaluation() {
+async function saveCurrentEvaluation() {
   if (!currentSelectedStudent) { alert("Selecteer eerst een leerling."); return; }
   if (!currentSelectedTask) { alert("Selecteer eerst een opdracht."); return; }
 
@@ -465,10 +471,27 @@ function saveCurrentEvaluation() {
     feedback: document.getElementById("eval-general-feedback").value.trim()
   };
 
+  // 1. Lokaal opslaan
   appData.evaluations.push(evaluationData);
   saveData();
 
-  alert(`Evaluatie voor ${currentSelectedStudent.name} opgeslagen!`);
+  // 2. Opslaan in Google Sheets (Cloud)
+  const cloudPayload = {
+    id: evaluationData.id,
+    datum: evaluationData.date,
+    leerling: currentSelectedStudent.name,
+    klas: currentSelectedClass ? currentSelectedClass.name : "-",
+    opdracht: currentSelectedTask.title,
+    score: `${currentTotal} / ${maxTotal}`,
+    details: {
+      spreektijd: formattedTimer,
+      feedback: evaluationData.feedback,
+      scores: currentScores
+    }
+  };
+
+  await slaEvaluatieOpInCloud(cloudPayload);
+
   loadEvaluationForStudent();
   renderStudentList();
 }
@@ -539,12 +562,16 @@ function bouwPdfHtml(data) {
 
   return `
     <div class="pdf-page-sheet">
-      <h1 style="font-size:20px;margin-bottom:5px;color:#0f172a;">${data.titel}</h1>
-      <div style="font-size:13px;color:#475569;margin-bottom:15px;border-bottom:1px solid #cbd5e1;padding-bottom:8px;">
-        <strong>${data.leerling}</strong> &middot; Klas: ${data.klas} (${data.schooljaar}) &middot; Datum: ${data.datum} &middot; Spreektijd: ${data.duur}
+      <div class="pdf-titel">${data.titel}</div>
+      <div class="pdf-subtitel">${data.leerling} &mdash; Klas ${data.klas}</div>
+      <div class="pdf-meta-bar">
+        <span><strong>Datum:</strong> ${data.datum}</span>
+        <span><strong>Leerkracht:</strong> J. Vermote</span>
+        <span><strong>Schooljaar:</strong> ${data.schooljaar}</span>
       </div>
-      <h2 style="font-size:15px;color:#1e293b;margin-top:15px;margin-bottom:8px;">Beoordeling</h2>
-      <table style="width:100%;border-collapse:collapse;margin-top:5px;font-size:12px;">
+
+      <h3 style="font-size:13px;color:#1e293b;margin-top:10px;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Beoordeling</h3>
+      <table style="width:100%;border-collapse:collapse;margin-top:5px;font-size:11px;">
         <thead>
           <tr style="background:#f1f5f9;">
             <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;width:30%;">Criterium</th>
@@ -554,11 +581,13 @@ function bouwPdfHtml(data) {
         </thead>
         <tbody>${rijen}</tbody>
       </table>
-      <div style="margin-top:20px;padding:12px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+
+      <div style="margin-top:15px;padding:10px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:4px;font-size:11px;">
         <strong style="color:#0f172a;">Feedback:</strong><br>
         <span style="white-space:pre-wrap;">${data.feedback}</span>
       </div>
-      <div style="margin-top:20px;font-size:16px;font-weight:bold;text-align:right;color:#1e3a8a;">
+
+      <div style="margin-top:15px;font-size:15px;font-weight:bold;text-align:right;color:#1e3a8a;">
         Eindscore: ${data.eindscore}
       </div>
     </div>
