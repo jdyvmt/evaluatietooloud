@@ -107,16 +107,22 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 .ml-2 { margin-left: 0.5rem; }
 .text-muted { color: #64748b; font-size: 0.875rem; }
 
-/* PDF EXPORT STYLING */
+/* PDF EXPORT CONTAINER - Strakke A4 opmaak */
 #pdf-export-container {
   display: block !important;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 210mm; /* A4 breedte */
-  opacity: 0.01; /* Bijna onzichtbaar voor de gebruiker, maar actief voor html2canvas */
-  pointer-events: none; /* Voorkomt dat er per ongeluk op geklikt wordt */
-  z-index: -1; /* Valt achter je normale interface */
+  width: 210mm;
+  min-height: 297mm;
+  background: #ffffff !important;
+  color: #000000 !important;
+  margin: 0 auto;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Zorgt dat pagina-breaks netjes verlopen bij klassen-exports */
+.html2pdf__page-break {
+  page-break-before: always;
+  break-before: page;
 }
 
 .pdf-page-sheet {
