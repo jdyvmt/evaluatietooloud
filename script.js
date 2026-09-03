@@ -1158,3 +1158,18 @@ function changePassword() {
     alert("Wachtwoord succesvol gewijzigd!");
   }
 }
+// Voorbeeld in script.js
+
+const GELDIGE_LOGINS = [
+  { username: "j.vermote", password: "jdyvmt" }
+];
+
+function controleerLogin(inputUser, inputPass) {
+  // .toLowerCase() voorkomt problemen met automatische hoofdletters in Safari
+  const user = inputUser.trim().toLowerCase(); 
+  const pass = inputPass.trim();
+
+  return GELDIGE_LOGINS.some(account => 
+    account.username.toLowerCase() === user && account.password === pass
+  );
+}
