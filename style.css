@@ -99,54 +99,44 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 .ml-2 { margin-left: 0.5rem; }
 .text-muted { color: #64748b; font-size: 0.875rem; }
 
-/* PDF EXPORT CONTAINER & OPMAAK */
+/* PDF EXPORT CONTAINER & A4 OPMAAK */
 @page {
-  size: A4;
-  margin: 0; /* Marges worden afgehandeld via de container padding */
+  size: A4 portrait;
+  margin: 0;
 }
 
 #pdf-export-container {
   display: block !important;
   width: 210mm;
-  background: #ffffff !important;
-  color: #000000 !important;
   margin: 0 auto;
   padding: 0;
+  background: #ffffff !important;
+  color: #000000 !important;
   box-sizing: border-box;
 }
 
 .pdf-page-sheet {
   width: 210mm;
-  padding: 15mm;
+  min-height: 297mm;
+  padding: 15mm 20mm; /* Boven/Onder 15mm, Links/Rechts 20mm */
   background: #ffffff;
   box-sizing: border-box;
-  page-break-inside: avoid;
-  break-inside: avoid;
+  overflow: hidden;
 }
 
-.html2pdf__page-break {
-  page-break-before: always;
-  break-before: page;
-}
-
-@media print {
-  body * { visibility: hidden; }
-  #pdf-export-container, #pdf-export-container * { visibility: visible; }
-  #pdf-export-container { position: absolute; left: 0; top: 0; display: block !important; }
-}
-
-/* NIEUWE HEADER OPMAAK FOR PDF */
+/* HEADER OPMAAK */
 .pdf-titel {
-  font-size: 20pt;
+  font-size: 22pt;
   font-weight: 800;
   color: #2563eb; /* Blauw */
+  line-height: 1.2;
   margin-bottom: 4px;
 }
 
 .pdf-subtitel {
   font-size: 14pt;
   font-weight: 600;
-  color: #1e293b;
+  color: #334155;
   margin-bottom: 12px;
 }
 
@@ -159,11 +149,13 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
   border-bottom: 2px solid #e2e8f0;
   padding-bottom: 8px;
   margin-bottom: 16px;
+  width: 100%;
 }
 
-/* Zorgt dat tabellen in de PDF de volle breedte pakken */
+/* TABEL FIT */
 #pdf-export-container table {
   width: 100% !important;
   table-layout: fixed;
   border-collapse: collapse;
+  word-wrap: break-word;
 }
