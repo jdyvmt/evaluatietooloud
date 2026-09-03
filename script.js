@@ -550,6 +550,7 @@ function verzamelPdfData(student, task, evaluation) {
   };
 }
 
+// 1. Zorgt voor de HTML-structuur en styling van één evaluatiepagina
 function bouwPdfHtml(data) {
   let rijen = '';
   data.parameters.forEach(p => {
@@ -564,18 +565,19 @@ function bouwPdfHtml(data) {
     <style>
       .pdf-page-sheet {
         width: 100%;
-        padding: 10mm 15mm;
+        padding: 12mm 15mm;
         box-sizing: border-box;
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         color: #0f172a;
         background: #ffffff;
+        -webkit-font-smoothing: antialiased;
       }
       .pdf-titel {
         font-size: 20pt;
         font-weight: 800;
         color: #2563eb;
         margin: 0 0 4px 0;
-        line-height: 1.2;
+        line-height: 1.1;
       }
       .pdf-subtitel {
         font-size: 13pt;
@@ -592,9 +594,10 @@ function bouwPdfHtml(data) {
         border-bottom: 2px solid #cbd5e1;
         padding-bottom: 6px;
         margin-bottom: 14px;
+        box-sizing: border-box;
       }
       .pdf-sectie-titel {
-        font-size: 11pt;
+        font-size: 10.5pt;
         font-weight: 700;
         color: #1e293b;
         margin: 12px 0 6px 0;
@@ -604,6 +607,7 @@ function bouwPdfHtml(data) {
       .pdf-tabel {
         width: 100%;
         border-collapse: collapse;
+        table-layout: fixed;
         margin-top: 4px;
         font-size: 9.5pt;
       }
@@ -619,10 +623,12 @@ function bouwPdfHtml(data) {
         padding: 6px 8px;
         border: 1px solid #cbd5e1;
         vertical-align: top;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
       }
-      .col-naam { width: 30%; font-weight: 600; }
-      .col-score { width: 12%; text-align: center; }
-      .col-desc { width: 58%; }
+      .col-naam { width: 28%; font-weight: 600; }
+      .col-score { width: 16%; text-align: center; white-space: nowrap; }
+      .col-desc { width: 56%; }
       
       .pdf-feedback-box {
         margin-top: 14px;
@@ -656,9 +662,9 @@ function bouwPdfHtml(data) {
       <table class="pdf-tabel">
         <thead>
           <tr>
-            <th style="width:30%;">Criterium</th>
-            <th style="width:12%; text-align:center;">Score</th>
-            <th style="width:58%;">Beschrijving</th>
+            <th style="width:28%;">Criterium</th>
+            <th style="width:16%; text-align:center;">Score</th>
+            <th style="width:56%;">Beschrijving</th>
           </tr>
         </thead>
         <tbody>
@@ -668,7 +674,7 @@ function bouwPdfHtml(data) {
 
       <div class="pdf-feedback-box">
         <strong style="color:#0f172a;">Feedback:</strong><br>
-        <span style="white-space:pre-wrap; color:#334155;">${data.feedback}</span>
+        <span style="white-space:pre-wrap; color:#334155;">${data.feedback || "Geen."}</span>
       </div>
 
       <div class="pdf-eindscore">
@@ -678,6 +684,44 @@ function bouwPdfHtml(data) {
   `;
 }
 
+// 2. Maakt de PDF aan via een tijdelijke off-screen container
+async function genereerPdfBestand(htmlInhoud, bestandsnaam) {
+  const tempDiv = document.createElement("div");
+  tempDiv.style.position = "absolute";
+  tempDiv.style.left = "-9999px";
+  tempDiv.style.top = "0";
+  tempDiv.style.width = "210mm";
+  tempDiv.style.backgroundColor = "#ffffff";
+  tempDiv.innerHTML = htmlInhoud;
+  
+  document.body.appendChild(tempDiv);
+
+  const opt = {
+    margin: 0,
+    filename: bestandsnaam,
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true, 
+      scrollX: 0, 
+      scrollY: 0,
+      letterRendering: true,
+      logging: false
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'] }
+  };
+
+  try {
+    await html2pdf().set(opt).from(tempDiv).save();
+  } catch (err) {
+    console.error("PDF Export Fout:", err);
+    alert("Er is een fout opgetreden bij het genereren van de PDF.");
+  } finally {
+    document.body.removeChild(tempDiv);
+  }
+}
+
+// 3. Aanroep voor 1 leerling
 async function exportStudentPDF() {
   if (!currentSelectedStudent || !currentSelectedTask) {
     alert("Selecteer een leerling en opdracht.");
@@ -691,43 +735,13 @@ async function exportStudentPDF() {
   );
 
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
-  const container = document.getElementById("pdf-export-container");
+  const html = bouwPdfHtml(data);
+  const bestandsnaam = `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`;
 
-  // Reset container en dwing A4-breedte af
-  container.removeAttribute("style");
-  container.style.display = "block";
-  container.style.width = "210mm";
-  container.style.backgroundColor = "#ffffff";
-
-  container.innerHTML = bouwPdfHtml(data);
-  window.scrollTo(0, 0);
-
-  const opt = {
-    margin: 0,
-    filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
-    html2canvas: { 
-      scale: 2, 
-      useCORS: true, 
-      scrollX: 0, 
-      scrollY: 0,
-      windowWidth: 800,
-      letterRendering: true,
-      logging: false
-    },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-
-  try {
-    await html2pdf().set(opt).from(container).save();
-  } catch (err) {
-    console.error("PDF Export Fout:", err);
-    alert("Er is een fout opgetreden bij het genereren van de PDF.");
-  } finally {
-    container.innerHTML = "";
-    container.style.display = "none";
-  }
+  await genereerPdfBestand(html, bestandsnaam);
 }
 
+// 4. Aanroep voor hele klas
 async function exportClassPDF() {
   if (!currentSelectedClass || !currentSelectedTask) {
     alert("Selecteer een klas en opdracht.");
@@ -743,17 +757,9 @@ async function exportClassPDF() {
     return;
   }
 
-  const container = document.getElementById("pdf-export-container");
-  
-  // Reset container en dwing A4-breedte af
-  container.removeAttribute("style");
-  container.style.display = "block";
-  container.style.width = "210mm";
-  container.style.backgroundColor = "#ffffff";
-
   let gecombineerdeHtml = '';
 
-  studentsInClass.forEach(student => {
+  studentsInClass.forEach((student, index) => {
     const evalData = appData.evaluations.find(
       e => e.studentId === student.id && 
            e.taskId === currentSelectedTask.id && 
@@ -761,37 +767,16 @@ async function exportClassPDF() {
     );
 
     const data = verzamelPdfData(student, currentSelectedTask, evalData);
-    gecombineerdeHtml += bouwPdfHtml(data);
+    
+    const isLaatste = index === studentsInClass.length - 1;
+    const pageBreakStyle = isLaatste ? '' : 'style="page-break-after: always; break-after: page;"';
+
+    gecombineerdeHtml += `<div ${pageBreakStyle}>${bouwPdfHtml(data)}</div>`;
   });
 
-  container.innerHTML = gecombineerdeHtml;
-  window.scrollTo(0, 0);
-
-  const opt = {
-    margin: 0,
-    filename: `Evaluaties_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`,
-    html2canvas: { 
-      scale: 2, 
-      useCORS: true, 
-      scrollX: 0, 
-      scrollY: 0,
-      windowWidth: 800,
-      letterRendering: true,
-      logging: false
-    },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-page-sheet' }
-  };
-
-  try {
-    await html2pdf().set(opt).from(container).save();
-  } catch (err) {
-    console.error("Klas PDF Export Fout:", err);
-    alert("Er is een fout opgetreden bij het genereren van de klas-PDF.");
-  } finally {
-    container.innerHTML = "";
-    container.style.display = "none";
-  }
+  const bestandsnaam = `Evaluaties_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`;
+  
+  await genereerPdfBestand(gecombineerdeHtml, bestandsnaam);
 }
 
 /* ==========================================================================
