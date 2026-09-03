@@ -115,14 +115,31 @@ function populateGlobalSchoolYearSelect() {
   };
 }
 
-function checkLoginSession() {
-  const loginOverlay = document.getElementById("screen-login");
-  if (!currentUser) {
-    loginOverlay.classList.add("active");
-  } else {
-    loginOverlay.classList.remove("active");
-    initEvalScreen();
+function verifieerInloggen(gebruikersnaamInput, wachtwoordInput) {
+  const ingegevenUser = gebruikersnaamInput.trim().toLowerCase();
+  const ingegevenPass = wachtwoordInput.trim();
+
+  // 1. Ophalen van eventueel opgeslagen gebruikers uit LocalStorage
+  const opgeslagenUsers = JSON.parse(localStorage.getItem("app_users") || "[]");
+
+  // 2. HARDCODED FALLBACK: Zorg dat je hier jouw vaste gegevens invult
+  const standaardAdmin = {
+    username: "j.vermote", // Vul hier de exacte naam in die je op de iMac gebruikt
+    password: "jdyvmt"      // Vul hier het exacte wachtwoord in
+  };
+
+  // 3. Controleer eerst het standaardaccount
+  if (ingegevenUser === standaardAdmin.username.toLowerCase() && ingegevenPass === standaardAdmin.password) {
+    return true;
   }
+
+  // 4. Controleer daarna de dynamic accounts uit localStorage
+  const bestaandeUser = opgeslagenUsers.find(u => u.username.toLowerCase() === ingegevenUser);
+  if (bestaandeUser && bestaandeUser.password === ingegevenPass) {
+    return true;
+  }
+
+  return false;
 }
 
 function setupEventListeners() {
@@ -1190,13 +1207,3 @@ function changePassword() {
 const GELDIGE_LOGINS = [
   { username: "j.vermote", password: "jdyvmt" }
 ];
-
-function controleerLogin(inputUser, inputPass) {
-  // .toLowerCase() voorkomt problemen met automatische hoofdletters in Safari
-  const user = inputUser.trim().toLowerCase(); 
-  const pass = inputPass.trim();
-
-  return GELDIGE_LOGINS.some(account => 
-    account.username.toLowerCase() === user && account.password === pass
-  );
-}
