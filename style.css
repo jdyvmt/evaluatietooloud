@@ -112,9 +112,11 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
   display: block !important;
   position: absolute;
   top: 0;
-  left: -9999px; /* Buiten het scherm plaatsen i.p.v. display:none */
-  width: 210mm;
-  background: #ffffff;
+  left: 0;
+  width: 210mm; /* A4 breedte */
+  opacity: 0.01; /* Bijna onzichtbaar voor de gebruiker, maar actief voor html2canvas */
+  pointer-events: none; /* Voorkomt dat er per ongeluk op geklikt wordt */
+  z-index: -1; /* Valt achter je normale interface */
 }
 
 .pdf-page-sheet {
