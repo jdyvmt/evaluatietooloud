@@ -554,9 +554,9 @@ function bouwPdfHtml(data) {
   let rijen = '';
   data.parameters.forEach(p => {
     rijen += `<tr>
-      <td style="padding:8px;border:1px solid #cbd5e1;font-weight:bold;">${p.naam}</td>
-      <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">${p.score}</td>
-      <td style="padding:8px;border:1px solid #cbd5e1;">${p.criterium}</td>
+      <td style="padding:8px;border:1px solid #cbd5e1;font-weight:bold;width:30%;">${p.naam}</td>
+      <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;width:15%;">${p.score}</td>
+      <td style="padding:8px;border:1px solid #cbd5e1;width:55%;">${p.criterium}</td>
     </tr>`;
   });
 
@@ -564,30 +564,32 @@ function bouwPdfHtml(data) {
     <div class="pdf-page-sheet">
       <div class="pdf-titel">${data.titel}</div>
       <div class="pdf-subtitel">${data.leerling} &mdash; Klas ${data.klas}</div>
+      
       <div class="pdf-meta-bar">
         <span><strong>Datum:</strong> ${data.datum}</span>
         <span><strong>Leerkracht:</strong> J. Vermote</span>
         <span><strong>Schooljaar:</strong> ${data.schooljaar}</span>
       </div>
 
-      <h3 style="font-size:13px;color:#1e293b;margin-top:10px;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Beoordeling</h3>
-      <table style="width:100%;border-collapse:collapse;margin-top:5px;font-size:11px;">
+      <h3 style="font-size:12pt;color:#1e293b;margin-top:12px;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Beoordeling</h3>
+      
+      <table style="width:100%;border-collapse:collapse;margin-top:5px;font-size:10pt;">
         <thead>
           <tr style="background:#f1f5f9;">
-            <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;width:30%;">Criterium</th>
-            <th style="padding:8px;border:1px solid #cbd5e1;width:15%;text-align:center;">Score</th>
+            <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;">Criterium</th>
+            <th style="padding:8px;border:1px solid #cbd5e1;text-align:center;">Score</th>
             <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;">Beschrijving</th>
           </tr>
         </thead>
         <tbody>${rijen}</tbody>
       </table>
 
-      <div style="margin-top:15px;padding:10px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:4px;font-size:11px;">
+      <div style="margin-top:16px;padding:12px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;font-size:10pt;">
         <strong style="color:#0f172a;">Feedback:</strong><br>
-        <span style="white-space:pre-wrap;">${data.feedback}</span>
+        <span style="white-space:pre-wrap;color:#334155;">${data.feedback}</span>
       </div>
 
-      <div style="margin-top:15px;font-size:15px;font-weight:bold;text-align:right;color:#1e3a8a;">
+      <div style="margin-top:16px;font-size:14pt;font-weight:bold;text-align:right;color:#1e3a8a;">
         Eindscore: ${data.eindscore}
       </div>
     </div>
@@ -613,9 +615,9 @@ async function exportStudentPDF() {
   window.scrollTo(0, 0);
 
   const opt = {
-    margin: 10,
+    margin: 0, // Marges worden door .pdf-page-sheet padding geregeld
     filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
-    html2canvas: { scale: 2 },
+    html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
@@ -628,7 +630,6 @@ async function exportStudentPDF() {
     container.innerHTML = "";
   }
 }
-
 async function exportClassPDF() {
   if (!currentSelectedClass || !currentSelectedTask) {
     alert("Selecteer een klas en een opdracht.");
