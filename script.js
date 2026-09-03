@@ -54,7 +54,7 @@ function seedDefaultData() {
           {
             id: "c1",
             title: "Inhoud & Opbouw",
-            weight: 2,
+            weight: 1,
             levels: [
               { label: "Onvoldoende", score: 2, desc: "Onvolledige structuur, mist rode draad." },
               { label: "Voldoende", score: 6, desc: "Logische opbouw, basiselementen aanwezig." },
@@ -93,7 +93,6 @@ function populateGlobalSchoolYearSelect() {
   if (!select) return;
   select.innerHTML = "";
 
-  // Verzamel alle unieke schooljaren uit klassen en evaluaties plus huidige
   const yearsSet = new Set([appData.currentSchoolYear, "2024-2025", "2025-2026", "2026-2027"]);
   appData.classes.forEach(c => { if (c.schoolYear) yearsSet.add(c.schoolYear); });
   appData.evaluations.forEach(e => { if (e.schoolYear) yearsSet.add(e.schoolYear); });
@@ -404,9 +403,7 @@ function renderRubrics() {
 
     const header = document.createElement("div");
     header.className = "rubric-header";
-    header.innerHTML = `
-      <h4>${criterion.title}</h4>
-    `;
+    header.innerHTML = `<h4>${criterion.title}</h4>`;
     block.appendChild(header);
 
     const levelsFlex = document.createElement("div");
@@ -425,7 +422,7 @@ function renderRubrics() {
         <div class="level-desc-text">${level.desc}</div>
       `;
 
-     btn.addEventListener("click", () => {
+      btn.addEventListener("click", () => {
         currentScores[criterion.id] = {
           levelIndex: lIdx,
           score: level.score
@@ -460,6 +457,7 @@ function updateScoreDisplay() {
 
   document.getElementById("eval-total-score").textContent = `${currentTotal} / ${maxTotal}`;
 }
+
 function renderPresetChips() {
   const container = document.getElementById("preset-feedback-chips");
   container.innerHTML = "";
@@ -495,11 +493,11 @@ function saveCurrentEvaluation() {
 
   currentSelectedTask.criteria.forEach(c => {
     const maxLevelScore = Math.max(...c.levels.map(l => l.score), 0);
-maxTotal += maxLevelScore;
+    maxTotal += maxLevelScore;
 
-if (currentScores[c.id]) {
-  currentTotal += currentScores[c.id].score;
-}
+    if (currentScores[c.id]) {
+      currentTotal += currentScores[c.id].score;
+    }
   });
 
   const evaluationData = {
@@ -540,12 +538,8 @@ function formatScore(value) {
   return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(".", ",");
 }
 
-function formatScorePair(score, maxScore) {
-  return `${formatScore(score)} / ${formatScore(maxScore)}`;
-}
-
 /* ==========================================================================
-   PDF EXPORT FUNCTIONALITEIT (Exact afgestemd op voorbeeld)
+   PDF EXPORT FUNCTIONALITEIT (CORRECTE RENDERING EN STRUCTUUR)
    ========================================================================== */
 
 function verzamelPdfData(student, task, evaluation) {
@@ -564,7 +558,7 @@ function verzamelPdfData(student, task, evaluation) {
     parameters.push({
       naam: c.title,
       score: level ? `${level.score} / ${maxLevelScore}` : `0 / ${maxLevelScore}`,
-      criterium: level ? level.desc || level.label : 'Niet beoordeeld'
+      criterium: level ? (level.desc || level.label) : 'Niet beoordeeld'
     });
   });
 
@@ -586,28 +580,37 @@ function verzamelPdfData(student, task, evaluation) {
 function bouwPdfHtml(data) {
   let rijen = '';
   data.parameters.forEach(p => {
-    rijen += `<tr><td style="padding:8px;border:1px solid #cbd5e1;font-weight:bold;">${p.naam}</td><td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">${p.score}</td><td style="padding:8px;border:1px solid #cbd5e1;">${p.criterium}</td></tr>`;
+    rijen += `<tr>
+      <td style="padding:8px;border:1px solid #cbd5e1;font-weight:bold;">${p.naam}</td>
+      <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">${p.score}</td>
+      <td style="padding:8px;border:1px solid #cbd5e1;">${p.criterium}</td>
+    </tr>`;
   });
 
   return `
-    <div style="width:190mm;background:#ffffff;color:#000000;font-family:sans-serif;padding:10mm;box-sizing:border-box;">
-      <h1 style="font-size:20px;margin-bottom:5px;">${data.titel}</h1>
-      <div style="font-size:14px;color:#555;margin-bottom:15px;">${data.leerling} &middot; ${data.klas} (${data.schooljaar}) - Datum: ${data.datum} - Spreektijd: ${data.duur}</div>
-      <h2 style="font-size:16px;border-bottom:2px solid #333;padding-bottom:5px;margin-top:20px;">Beoordeling</h2>
-      <table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;">
+    <div class="pdf-page-sheet">
+      <h1 style="font-size:20px;margin-bottom:5px;color:#0f172a;">${data.titel}</h1>
+      <div style="font-size:13px;color:#475569;margin-bottom:15px;border-bottom:1px solid #cbd5e1;padding-bottom:8px;">
+        <strong>${data.leerling}</strong> &middot; Klas: ${data.klas} (${data.schooljaar}) &middot; Datum: ${data.datum} &middot; Spreektijd: ${data.duur}
+      </div>
+      <h2 style="font-size:15px;color:#1e293b;margin-top:15px;margin-bottom:8px;">Beoordeling</h2>
+      <table style="width:100%;border-collapse:collapse;margin-top:5px;font-size:12px;">
         <thead>
           <tr style="background:#f1f5f9;">
-            <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;">Criteria</th>
-            <th style="padding:8px;border:1px solid #cbd5e1;width:70px;">Score</th>
-            <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;">Uitleg</th>
+            <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;width:30%;">Criterium</th>
+            <th style="padding:8px;border:1px solid #cbd5e1;width:15%;text-align:center;">Score</th>
+            <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;">Beschrijving</th>
           </tr>
         </thead>
         <tbody>${rijen}</tbody>
       </table>
-      <div style="margin-top:20px;padding:10px;background:#f8fafc;border:1px solid #cbd5e1;font-size:12px;">
-        <strong>Feedback:</strong> ${data.feedback}
+      <div style="margin-top:20px;padding:12px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+        <strong style="color:#0f172a;">Feedback:</strong><br>
+        <span style="white-space:pre-wrap;">${data.feedback}</span>
       </div>
-      <div style="margin-top:15px;font-size:16px;font-weight:bold;text-align:right;">Eindscore: ${data.eindscore}</div>
+      <div style="margin-top:20px;font-size:16px;font-weight:bold;text-align:right;color:#1e3a8a;">
+        Eindscore: ${data.eindscore}
+      </div>
     </div>
   `;
 }
@@ -617,29 +620,28 @@ function exportStudentPDF() {
     alert("Selecteer een leerling en opdracht.");
     return;
   }
+
   const evalData = appData.evaluations.find(e => e.studentId === currentSelectedStudent.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
-  
-  const container = document.createElement("div");
-  const pageDiv = document.createElement("div");
-  pageDiv.className = "pdf-page-container";
-  pageDiv.innerHTML = bouwPdfHtml(data);
-  container.appendChild(pageDiv);
-  
-  document.body.appendChild(container);
+
+  const container = document.getElementById("pdf-export-container");
+  container.innerHTML = bouwPdfHtml(data);
+  container.style.display = "block";
 
   const opt = {
-    margin: 10,
+    margin: 0,
     filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-    pagebreak: { mode: ['css', 'legacy'] },
+    html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-  
-  html2pdf().set(opt).from(container).save().then(() => {
-    document.body.removeChild(container);
-  });
+
+  setTimeout(() => {
+    html2pdf().set(opt).from(container).save().then(() => {
+      container.style.display = "none";
+      container.innerHTML = "";
+    });
+  }, 100);
 }
 
 function exportClassPDF() {
@@ -648,41 +650,47 @@ function exportClassPDF() {
     return;
   }
 
-  const container = document.createElement("div");
-  container.className = "pdf-document-wrapper";
-  
-  currentSelectedClass.students.forEach((student, index) => {
+  const container = document.getElementById("pdf-export-container");
+  container.innerHTML = "";
+
+  const students = currentSelectedClass.students || [];
+  if (students.length === 0) {
+    alert("Deze klas heeft geen leerlingen.");
+    return;
+  }
+
+  students.forEach((student, index) => {
     const evalData = appData.evaluations.find(e => e.studentId === student.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
     const data = verzamelPdfData(student, currentSelectedTask, evalData);
-    
-    const pageDiv = document.createElement("div");
-    pageDiv.className = "pdf-page-container";
-    pageDiv.innerHTML = bouwPdfHtml(data);
-    
-    if (index < currentSelectedClass.students.length - 1) {
-      pageDiv.style.pageBreakAfter = "always";
-      pageDiv.style.breakAfter = "page";
+
+    const wrapper = document.createElement("div");
+    if (index > 0) {
+      wrapper.className = "html2pdf__page-break";
     }
-    container.appendChild(pageDiv);
+    wrapper.innerHTML = bouwPdfHtml(data);
+    container.appendChild(wrapper);
   });
 
-  document.body.appendChild(container);
+  container.style.display = "block";
 
   const opt = {
-    margin: 0, // Marges worden nu opgevangen door de .pdf-page-container padding
-    filename: `Klas_Evaluatie_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`,
+    margin: 0,
+    filename: `Klas_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: true },
-    pagebreak: { mode: ['css', 'legacy'] },
+    html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-  
-  html2pdf().set(opt).from(container).save().then(() => {
-    document.body.removeChild(container);
-  });
+
+  setTimeout(() => {
+    html2pdf().set(opt).from(container).save().then(() => {
+      container.style.display = "none";
+      container.innerHTML = "";
+    });
+  }, 100);
 }
+
 /* ==========================================================================
-   SCHERM 2: DASHBOARD
+   DASHBOARD / OPDRACHTEN BEHEER
    ========================================================================== */
 
 let editingTask = null;
@@ -715,114 +723,74 @@ function loadTaskInEditor(task) {
 }
 
 function renderCriteriaEditor() {
-  const container = document.getElementById("editor-criteria-container");
+  const container = document.getElementById("criteria-editor-container");
   container.innerHTML = "";
+
   if (!editingTask || !editingTask.criteria) return;
 
-  editingTask.criteria.forEach((c, cIdx) => {
-    const box = document.createElement("div");
-    box.className = "criterion-editor-box";
-    box.draggable = true;
-    box.dataset.index = cIdx;
+  editingTask.criteria.forEach((criterion, cIdx) => {
+    const card = document.createElement("div");
+    card.className = "card-section mt-2";
 
-    box.addEventListener("dragstart", (e) => {
-      e.dataTransfer.setData("text/plain", cIdx);
-      box.classList.add("dragging");
+    let levelsHtml = '';
+    criterion.levels.forEach((lvl, lIdx) => {
+      levelsHtml += `
+        <div class="level-edit-row" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;">
+          <input type="text" value="${lvl.label}" placeholder="Label" style="width:120px;" onchange="updateLevelProp(${cIdx}, ${lIdx}, 'label', this.value)">
+          <input type="number" value="${lvl.score}" placeholder="Pt" style="width:70px;" onchange="updateLevelProp(${cIdx}, ${lIdx}, 'score', Number(this.value))">
+          <input type="text" value="${lvl.desc}" placeholder="Omschrijving" style="flex:1;" onchange="updateLevelProp(${cIdx}, ${lIdx}, 'desc', this.value)">
+          <button type="button" class="btn btn-sm btn-danger" onclick="removeLevel(${cIdx}, ${lIdx})">X</button>
+        </div>
+      `;
     });
 
-    box.addEventListener("dragend", () => {
-      box.classList.remove("dragging");
-    });
-
-    box.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      const draggingEl = container.querySelector(".dragging");
-      const siblings = [...container.querySelectorAll(".criterion-editor-box:not(.dragging)")];
-      const nextSibling = siblings.find(sibling => {
-        const rect = sibling.getBoundingClientRect();
-        return e.clientY <= rect.top + rect.height / 2;
-      });
-      container.insertBefore(draggingEl, nextSibling);
-    });
-
-    box.addEventListener("drop", (e) => {
-      e.preventDefault();
-      const fromIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
-      const allBoxes = [...container.querySelectorAll(".criterion-editor-box")];
-      const toIdx = allBoxes.indexOf(box);
-
-      const movedItem = editingTask.criteria.splice(fromIdx, 1)[0];
-      editingTask.criteria.splice(toIdx, 0, movedItem);
-      
-      renderCriteriaEditor();
-    });
-
-    box.innerHTML = `
-      <div class="criterion-header-inputs mb-2">
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+        <input type="text" value="${criterion.title}" style="font-weight:bold;font-size:1.05rem;width:60%;" onchange="updateCriterionTitle(${cIdx}, this.value)">
         <div>
-          <label>Criterium Titel:</label>
-          <input type="text" value="${c.title.replace(/"/g, '&quot;')}" onchange="updateCriterionTitle(${cIdx}, this.value)">
+          <button type="button" class="btn btn-sm btn-secondary" onclick="addLevelToCriterion(${cIdx})">+ Niveau</button>
+          <button type="button" class="btn btn-sm btn-danger" onclick="removeCriterion(${cIdx})">Verwijderen</button>
         </div>
       </div>
-      <h5>Niveaus:</h5>
-      <div id="levels-editor-${cIdx}"></div>
-
-      <div class="mt-2">
-        <button type="button" class="btn btn-sm btn-secondary" onclick="addLevelToCriterion(${cIdx})">+ Niveau</button>
-        <button type="button" class="btn btn-sm btn-secondary" onclick="removeLevelFromCriterion(${cIdx})">− Niveau</button>
-      </div>
-
-      <div class="mt-2">
-        <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="duplicateCriterion(${cIdx})">Dupliceer Criterium</button>
-        <button type="button" class="btn btn-sm btn-danger" onclick="removeCriterion(${cIdx})">Verwijder Criterium</button>
-      </div>
+      <div class="levels-edit-wrapper">${levelsHtml}</div>
     `;
-    container.appendChild(box);
 
-    const levelsContainer = box.querySelector(`#levels-editor-${cIdx}`);
-    c.levels.forEach((lvl, lIdx) => {
-      const row = document.createElement("div");
-      row.className = "level-editor-row";
-      row.innerHTML = `
-        <input type="number" value="${lvl.score}" placeholder="pt" onchange="updateLevelScore(${cIdx}, ${lIdx}, this.value)">
-        <input type="text" value="${lvl.label.replace(/"/g, '&quot;')}" placeholder="Label" onchange="updateLevelLabel(${cIdx}, ${lIdx}, this.value)">
-        <input type="text" value="${lvl.desc.replace(/"/g, '&quot;')}" placeholder="Omschrijving" onchange="updateLevelDesc(${cIdx}, ${lIdx}, this.value)">
-        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moveLevel(${cIdx}, ${lIdx}, -1)" ${lIdx === 0 ? 'disabled' : ''}>▲</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moveLevel(${cIdx}, ${lIdx}, 1)" ${lIdx === c.levels.length - 1 ? 'disabled' : ''}>▼</button>
-      `;
-      levelsContainer.appendChild(row);
-    });
+    container.appendChild(card);
   });
 }
 
-window.updateCriterionTitle = (cIdx, val) => { editingTask.criteria[cIdx].title = val; };
-window.removeCriterion = (cIdx) => { editingTask.criteria.splice(cIdx, 1); renderCriteriaEditor(); };
-window.updateLevelScore = (cIdx, lIdx, val) => { editingTask.criteria[cIdx].levels[lIdx].score = parseFloat(val) || 0; };
-window.updateLevelLabel = (cIdx, lIdx, val) => { editingTask.criteria[cIdx].levels[lIdx].label = val; };
-window.updateLevelDesc = (cIdx, lIdx, val) => { editingTask.criteria[cIdx].levels[lIdx].desc = val; };
-window.addLevelToCriterion = (cIdx) => {
-  const criterion = editingTask.criteria[cIdx];
-
-  criterion.levels.push({
-    label: "Nieuw niveau",
-    score: 0,
-    desc: ""
-  });
-
-  renderCriteriaEditor();
-};
-
-window.removeLevelFromCriterion = (cIdx) => {
-  const criterion = editingTask.criteria[cIdx];
-
-  if (criterion.levels.length <= 1) {
-    alert("Een criterium moet minstens één niveau hebben.");
-    return;
+function updateCriterionTitle(cIdx, val) {
+  if (editingTask && editingTask.criteria[cIdx]) {
+    editingTask.criteria[cIdx].title = val;
   }
+}
 
-  criterion.levels.pop();
-  renderCriteriaEditor();
-};
+function updateLevelProp(cIdx, lIdx, prop, val) {
+  if (editingTask && editingTask.criteria[cIdx] && editingTask.criteria[cIdx].levels[lIdx]) {
+    editingTask.criteria[cIdx].levels[lIdx][prop] = val;
+  }
+}
+
+function addLevelToCriterion(cIdx) {
+  if (editingTask && editingTask.criteria[cIdx]) {
+    editingTask.criteria[cIdx].levels.push({ label: "Nieuw", score: 0, desc: "" });
+    renderCriteriaEditor();
+  }
+}
+
+function removeLevel(cIdx, lIdx) {
+  if (editingTask && editingTask.criteria[cIdx]) {
+    editingTask.criteria[cIdx].levels.splice(lIdx, 1);
+    renderCriteriaEditor();
+  }
+}
+
+function removeCriterion(cIdx) {
+  if (editingTask) {
+    editingTask.criteria.splice(cIdx, 1);
+    renderCriteriaEditor();
+  }
+}
 
 function addCriterionToEditor() {
   if (!editingTask) return;
@@ -833,44 +801,53 @@ function addCriterionToEditor() {
     levels: [
       { label: "Onvoldoende", score: 2, desc: "" },
       { label: "Voldoende", score: 6, desc: "" },
-      { label: "Goed", score: 8, desc: "" },
-      { label: "Zeer Goed", score: 10, desc: "" }
+      { label: "Goed", score: 8, desc: "" }
     ]
   });
   renderCriteriaEditor();
 }
 
 function createNewTask() {
-  const newTask = { id: "t_" + Date.now(), title: "Nieuwe Opdracht", presets: [], criteria: [] };
+  const newTask = {
+    id: "t_" + Date.now(),
+    title: "Nieuwe Opdracht",
+    presets: [],
+    criteria: []
+  };
   appData.tasks.push(newTask);
   saveData();
   loadTaskInEditor(newTask);
+  populateTaskSelect("eval-task-select");
 }
 
 function copyCurrentTask() {
   if (!editingTask) return;
-  const copiedTask = JSON.parse(JSON.stringify(editingTask));
-  copiedTask.id = "t_" + Date.now();
-  copiedTask.title += " (Kopie)";
-  appData.tasks.push(copiedTask);
+  const copied = JSON.parse(JSON.stringify(editingTask));
+  copied.id = "t_" + Date.now();
+  copied.title = copied.title + " (Kopie)";
+  appData.tasks.push(copied);
   saveData();
-  loadTaskInEditor(copiedTask);
-  alert("Opdracht gekopieerd!");
+  loadTaskInEditor(copied);
+  populateTaskSelect("eval-task-select");
 }
 
 function saveTaskChanges() {
   if (!editingTask) return;
   editingTask.title = document.getElementById("task-name-input").value.trim();
-  const presetsVal = document.getElementById("task-presets-input").value;
-  editingTask.presets = presetsVal.split(",").map(s => s.trim()).filter(s => s.length > 0);
+  const presetsRaw = document.getElementById("task-presets-input").value;
+  editingTask.presets = presetsRaw.split(",").map(s => s.trim()).filter(s => s.length > 0);
 
-  const index = appData.tasks.findIndex(t => t.id === editingTask.id);
-  if (index !== -1) {
-    appData.tasks[index] = editingTask;
-    saveData();
-    alert("Wijzigingen opgeslagen!");
-    renderTaskList();
+  const idx = appData.tasks.findIndex(t => t.id === editingTask.id);
+  if (idx !== -1) {
+    appData.tasks[idx] = editingTask;
+  } else {
+    appData.tasks.push(editingTask);
   }
+
+  saveData();
+  alert("Opdracht opgeslagen!");
+  renderTaskList();
+  populateTaskSelect("eval-task-select");
 }
 
 function deleteTask() {
@@ -880,465 +857,99 @@ function deleteTask() {
     saveData();
     editingTask = null;
     initDashboardScreen();
+    populateTaskSelect("eval-task-select");
   }
 }
 
 /* ==========================================================================
-   SCHERM 3: KLASSENBEHEER & OVERZICHT & LEERLING DETAIL
+   KLASSEN BEHEREN
    ========================================================================== */
 
 let editingClass = null;
 
 function initClassesScreen() {
   renderClassesList();
-  populateTaskSelect("overview-task-select");
-  populateDetailStudentSelect();
-
-  const currentClasses = appData.classes.filter(c => c.schoolYear === appData.currentSchoolYear);
-  if (currentClasses.length > 0 && !editingClass) {
-    loadClassInEditor(currentClasses[0]);
-  } else if (appData.classes.length > 0 && !editingClass) {
+  if (appData.classes.length > 0 && !editingClass) {
     loadClassInEditor(appData.classes[0]);
   }
 }
 
 function renderClassesList() {
-  const ul = document.getElementById("classes-class-list");
+  const ul = document.getElementById("classes-list");
   ul.innerHTML = "";
   const currentClasses = appData.classes.filter(c => c.schoolYear === appData.currentSchoolYear);
 
-  currentClasses.forEach(c => {
+  currentClasses.forEach(cls => {
     const li = document.createElement("li");
-    if (editingClass && editingClass.id === c.id) li.classList.add("active");
-    li.textContent = c.name;
-    li.addEventListener("click", () => {
-      loadClassInEditor(c);
-      populateDetailStudentSelect();
-    });
+    if (editingClass && editingClass.id === cls.id) li.classList.add("active");
+    li.textContent = cls.name;
+    li.addEventListener("click", () => loadClassInEditor(cls));
     ul.appendChild(li);
   });
 }
 
-function loadClassInEditor(c) {
-  editingClass = JSON.parse(JSON.stringify(c));
-  currentSelectedClass = c; // Zorg dat deze direct gelijk is aan de actieve klas
+function loadClassInEditor(cls) {
+  editingClass = JSON.parse(JSON.stringify(cls));
   renderClassesList();
-
   document.getElementById("class-name-input").value = editingClass.name;
-  document.getElementById("class-students-input").value = "";
+  document.getElementById("class-year-input").value = editingClass.schoolYear || appData.currentSchoolYear;
 
-  renderOverviewTab();
-  populateDetailStudentSelect();
-  renderStudentManagementList();
-}
+  const names = (editingClass.students || []).map(s => s.name).join("\n");
+  document.getElementById("class-students-textarea").value = names;
 
-function switchClassSubTab(tab) {
-  const editTab = document.getElementById("tab-content-class-edit");
-  const overviewTab = document.getElementById("tab-content-class-overview");
-  const detailTab = document.getElementById("tab-content-student-detail");
-  
-  const btnEdit = document.getElementById("tab-btn-class-edit");
-  const btnOverview = document.getElementById("tab-btn-class-overview");
-  const btnDetail = document.getElementById("tab-btn-student-detail");
-
-  editTab.style.display = "none";
-  overviewTab.style.display = "none";
-  detailTab.style.display = "none";
-  btnEdit.className = "btn btn-sm btn-secondary";
-  btnOverview.className = "btn btn-sm btn-secondary";
-  btnDetail.className = "btn btn-sm btn-secondary";
-
-  if (tab === "edit") {
-    editTab.style.display = "block";
-    btnEdit.className = "btn btn-sm btn-primary";
-  } else if (tab === "overview") {
-    overviewTab.style.display = "block";
-    btnOverview.className = "btn btn-sm btn-primary";
-    renderOverviewTab();
-  } else if (tab === "detail") {
-    detailTab.style.display = "block";
-    btnDetail.className = "btn btn-sm btn-primary";
-    populateDetailStudentSelect();
-  }
-}
-
-function renderOverviewTab() {
-  const container = document.getElementById("class-students-overview-list");
-  container.innerHTML = "";
-  if (!editingClass) {
-    container.innerHTML = "<p class='text-muted'>Selecteer eerst een klas.</p>";
-    return;
-  }
-
-  editingClass.students.forEach(student => {
-    const evals = appData.evaluations.filter(e => e.studentId === student.id && e.schoolYear === appData.currentSchoolYear);
-    const row = document.createElement("div");
-    row.className = "overview-eval-row";
-    row.innerHTML = `
-      <span><strong>${student.name}</strong></span>
-      <span>Evaluaties voltooid: ${evals.length}</span>
-    `;
-    container.appendChild(row);
-  });
-}
-
-function populateDetailStudentSelect() {
-  const select = document.getElementById("detail-student-select");
-  if (!select) return;
-  select.innerHTML = "<option value=''>-- Kies een leerling --</option>";
-
-  // Verzamel alle leerlingen uit alle klassen of huidige klas
-  const allStudents = [];
-  appData.classes.forEach(c => {
-    if (c.students) {
-      c.students.forEach(s => allStudents.push({ ...s, className: c.name, schoolYear: c.schoolYear }));
-    }
-  });
-
-  allStudents.forEach(student => {
-    const opt = document.createElement("option");
-    opt.value = student.id;
-    opt.textContent = `${student.name} (${student.className} - ${student.schoolYear})`;
-    select.appendChild(opt);
-  });
-}
-
-function renderStudentDetailContent() {
-  const studentId = document.getElementById("detail-student-select").value;
-  const container = document.getElementById("student-detail-content");
-  container.innerHTML = "";
-
-  if (!studentId) {
-    container.innerHTML = "<p class='text-muted'>Selecteer een leerling om het overzicht te tonen.</p>";
-    return;
-  }
-
-  // Zoek leerling naam
-  let studentName = "";
-  appData.classes.forEach(c => {
-    const found = c.students?.find(s => s.id === studentId);
-    if (found) studentName = found.name;
-  });
-
-  const evals = appData.evaluations.filter(e => e.studentId === studentId);
-  if (evals.length === 0) {
-    container.innerHTML = `<p class='text-muted'>Geen ingevulde evaluaties gevonden voor ${studentName}.</p>`;
-    return;
-  }
-
-  evals.forEach(ev => {
-    const task = appData.tasks.find(t => t.id === ev.taskId);
-    const taskTitle = task ? task.title : "Onbekende opdracht";
-
-    let criteriaHtml = "";
-    if (task && ev.scores) {
-      task.criteria.forEach(c => {
-        const sel = ev.scores[c.id];
-        const lvl = sel ? c.levels[sel.levelIndex] : null;
-        criteriaHtml += `
-          <div style="font-size: 0.9rem; margin-top: 0.3rem;">
-            <strong>${c.title}:</strong> ${lvl ? `${lvl.label} (${lvl.score}pt) - ${lvl.desc}` : 'Niet beoordeeld'}
-          </div>
-        `;
-      });
-    }
-
-    const card = document.createElement("div");
-    card.className = "detail-eval-card";
-    card.innerHTML = `
-      <div class="detail-eval-header">
-        <h4 style="color: #1e293b; margin: 0;">${taskTitle} (${ev.schoolYear})</h4>
-        <div class="student-management-actions">
-          <span class="badge detail-score-badge">Score: ${formatScorePair(ev.totalScore, ev.maxScore)}</span>
-          <button type="button" class="btn btn-sm btn-danger" onclick="deleteEvaluation('${ev.id}')">Verwijderen</button>
-        </div>
-      </div>
-      <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem;">Datum: ${ev.date} | Spreektijd: ${ev.timer || '00:00'}</p>
-      <div style="border-top: 1px dashed #cbd5e1; padding-top: 0.5rem; margin-top: 0.5rem;">
-        ${criteriaHtml}
-      </div>
-      <div style="margin-top: 0.5rem; background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 0.9rem;">
-        <strong>Feedback:</strong> ${ev.feedback || 'Geen feedback opgegeven.'}
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-function deleteEvaluation(evaluationId) {
-  const evaluation = appData.evaluations.find(e => e.id === evaluationId);
-  if (!evaluation) return;
-
-  const student = appData.classes.flatMap(c => c.students || []).find(s => s.id === evaluation.studentId);
-  const task = appData.tasks.find(t => t.id === evaluation.taskId);
-  const studentName = student ? student.name : 'deze leerling';
-  const taskTitle = task ? task.title : 'deze evaluatie';
-
-  if (!confirm(`Weet je zeker dat je de evaluatie van ${studentName} voor '${taskTitle}' wilt verwijderen?`)) return;
-
-  appData.evaluations = appData.evaluations.filter(e => e.id !== evaluationId);
-  saveData();
-
-  if (document.getElementById('detail-student-select').value === evaluation.studentId) {
-    renderStudentDetailContent();
-  }
-  renderOverviewTab();
-  if (currentSelectedStudent && currentSelectedStudent.id === evaluation.studentId) {
-    loadEvaluationForStudent();
-    renderStudentList();
-  }
-}
-
-function getCurrentSchoolYearStudents() {
-  const students = [];
-  appData.classes
-    .filter(c => c.schoolYear === appData.currentSchoolYear)
-    .forEach(c => {
-      (c.students || []).forEach(student => {
-        students.push({
-          id: student.id,
-          name: student.name,
-          classId: c.id,
-          className: c.name
-        });
-      });
-    });
-  return students;
-}
-
-function renderStudentManagementList() {
-  const container = document.getElementById('student-management-list');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const students = getCurrentSchoolYearStudents();
-  const classes = appData.classes.filter(c => c.schoolYear === appData.currentSchoolYear);
-
-  if (students.length === 0) {
-    container.innerHTML = '<p class="text-muted">Nog geen leerlingen aangemaakt in dit schooljaar.</p>';
-    return;
-  }
-
-  students.forEach(student => {
-    const row = document.createElement('div');
-    row.className = 'student-management-row';
-    row.innerHTML = `
-      <div class="field-group">
-        <label>Naam</label>
-        <input type="text" value="${student.name.replace(/"/g, '&quot;')}" data-student-name>
-      </div>
-      <div class="field-group">
-        <label>Klas</label>
-        <select data-student-class>
-          ${classes.map(c => `<option value="${c.id}" ${c.id === student.classId ? 'selected' : ''}>${c.name}</option>`).join('')}
-          <option value="__new_class__">+ Nieuwe klas aanmaken...</option>
-        </select>
-      </div>
-      <div class="student-management-actions">
-        <button type="button" class="btn btn-sm btn-primary" data-save-student>Opslaan</button>
-        <button type="button" class="btn btn-sm btn-danger" data-delete-student>Verwijderen</button>
-      </div>
-    `;
-
-    row.querySelector('[data-save-student]').addEventListener('click', () => {
-      const classSelect = row.querySelector('[data-student-class]');
-      let targetClassId = classSelect.value;
-
-      if (targetClassId === '__new_class__') {
-        const newClassName = prompt('Naam van de nieuwe klas:', 'Nieuwe Klas');
-        if (!newClassName || !newClassName.trim()) {
-          classSelect.value = student.classId;
-          return;
-        }
-
-        const trimmedClassName = newClassName.trim();
-        const existingClass = classes.find(c => c.name.trim().toLowerCase() === trimmedClassName.toLowerCase());
-        if (existingClass) {
-          targetClassId = existingClass.id;
-        } else {
-          const newClass = {
-            id: 'k_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-            name: trimmedClassName,
-            schoolYear: appData.currentSchoolYear,
-            students: []
-          };
-          appData.classes.push(newClass);
-          targetClassId = newClass.id;
-        }
-      }
-
-      updateStudentManagement(student.id, row.querySelector('[data-student-name]').value, targetClassId);
-    });
-
-    row.querySelector('[data-delete-student]').addEventListener('click', () => {
-      deleteStudent(student.id);
-    });
-
-    container.appendChild(row);
-  });
-}
-
-function updateStudentManagement(studentId, newName, newClassId) {
-  const name = newName.trim();
-  if (!name) {
-    alert('Een leerling moet een naam hebben.');
-    return;
-  }
-
-  const targetClass = appData.classes.find(c => c.id === newClassId && c.schoolYear === appData.currentSchoolYear);
-  if (!targetClass) {
-    alert('Selecteer een geldige klas.');
-    return;
-  }
-
-  let student = null;
-  let sourceClass = null;
-  appData.classes.forEach(c => {
-    const found = (c.students || []).find(s => s.id === studentId);
-    if (found) {
-      student = found;
-      sourceClass = c;
-    }
-  });
-
-  if (!student || !sourceClass) {
-    alert('Leerling niet gevonden.');
-    return;
-  }
-
-  const duplicate = (targetClass.students || []).some(s => s.id !== studentId && s.name.trim().toLowerCase() === name.toLowerCase());
-  if (duplicate) {
-    alert(`Er bestaat al een leerling met de naam '${name}' in klas ${targetClass.name}.`);
-    return;
-  }
-
-  student.name = name;
-
-  if (sourceClass.id !== targetClass.id) {
-    sourceClass.students = (sourceClass.students || []).filter(s => s.id !== studentId);
-    targetClass.students = targetClass.students || [];
-    targetClass.students.push(student);
-  }
-
-  saveData();
-
-  currentSelectedClass = appData.classes.find(c => currentSelectedClass && c.id === currentSelectedClass.id) || currentSelectedClass;
-
-  if (editingClass && editingClass.id === sourceClass.id) {
-    editingClass = JSON.parse(JSON.stringify(sourceClass));
-  }
-  if (editingClass && editingClass.id === targetClass.id) {
-    editingClass = JSON.parse(JSON.stringify(targetClass));
-  }
-
-  if (currentSelectedStudent && currentSelectedStudent.id === studentId) {
-    currentSelectedStudent = student;
-  }
-
-  renderClassesList();
-  renderStudentManagementList();
-  populateDetailStudentSelect();
-  renderOverviewTab();
-  renderStudentList();
-  alert(`Leerling '${name}' is bijgewerkt. De evaluaties zijn behouden.`);
-}
-
-function deleteStudent(studentId) {
-  let student = null;
-  let sourceClass = null;
-  appData.classes.forEach(c => {
-    const found = (c.students || []).find(s => s.id === studentId);
-    if (found) {
-      student = found;
-      sourceClass = c;
-    }
-  });
-
-  if (!student || !sourceClass) {
-    alert('Leerling niet gevonden.');
-    return;
-  }
-
-  const evaluationCount = appData.evaluations.filter(e => e.studentId === studentId).length;
-  const message = evaluationCount > 0
-    ? `Weet je zeker dat je leerling '${student.name}' wilt verwijderen? Dit verwijdert ook ${evaluationCount} gekoppelde evaluatie(s).`
-    : `Weet je zeker dat je leerling '${student.name}' wilt verwijderen?`;
-
-  if (!confirm(message)) return;
-
-  sourceClass.students = (sourceClass.students || []).filter(s => s.id !== studentId);
-  appData.evaluations = appData.evaluations.filter(e => e.studentId !== studentId);
-  saveData();
-
-  if (currentSelectedStudent && currentSelectedStudent.id === studentId) {
-    currentSelectedStudent = null;
-    currentScores = {};
-    document.getElementById('eval-student-title').textContent = 'Selecteer een leerling';
-    document.getElementById('eval-task-subtitle').textContent = 'Opdracht: -';
-    document.getElementById('eval-general-feedback').value = '';
-    resetTimer();
-  }
-
-  if (editingClass && editingClass.id === sourceClass.id) {
-    editingClass = JSON.parse(JSON.stringify(sourceClass));
-    document.getElementById('class-name-input').value = editingClass.name;
-  }
-
-  renderClassesList();
-  renderStudentManagementList();
-  populateDetailStudentSelect();
-  renderOverviewTab();
-  renderStudentList();
-  alert(`Leerling '${student.name}' is verwijderd.`);
-}
-
-function saveClassChanges() {
-  if (!editingClass) return;
-
-  const newClassName = document.getElementById("class-name-input").value.trim();
-  if (!newClassName) {
-    alert("Geef de klas een naam.");
-    return;
-  }
-
-  editingClass.name = newClassName;
-  const rawNames = document.getElementById("class-students-input").value.split("\n");
-  const namesToAdd = rawNames.map(n => n.trim()).filter(n => n.length > 0);
-
-  namesToAdd.forEach(name => {
-    const exists = (editingClass.students || []).some(s => s.name.trim().toLowerCase() === name.toLowerCase());
-    if (!exists) {
-      editingClass.students = editingClass.students || [];
-      editingClass.students.push({ id: "s_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8), name });
-    }
-  });
-
-  const index = appData.classes.findIndex(c => c.id === editingClass.id);
-  if (index !== -1) {
-    appData.classes[index] = editingClass;
-    saveData();
-    if (currentSelectedClass && currentSelectedClass.id === editingClass.id) {
-      currentSelectedClass = appData.classes[index];
-    }
-    document.getElementById("class-students-input").value = "";
-    alert(namesToAdd.length ? "Klaswijzigingen en nieuwe leerlingen opgeslagen!" : "Klaswijzigingen opgeslagen!");
-    renderClassesList();
-    populateDetailStudentSelect();
-    renderStudentManagementList();
-    renderOverviewTab();
-  }
+  populateStudentDetailSelect();
 }
 
 function createNewClass() {
-  const newClass = {
+  const newCls = {
     id: "k_" + Date.now(),
     name: "Nieuwe Klas",
     schoolYear: appData.currentSchoolYear,
     students: []
   };
-  appData.classes.push(newClass);
+  appData.classes.push(newCls);
   saveData();
-  loadClassInEditor(newClass);
+  loadClassInEditor(newCls);
+  populateClassSelect("eval-class-select");
+}
+
+function saveClassChanges() {
+  if (!editingClass) return;
+
+  editingClass.name = document.getElementById("class-name-input").value.trim();
+  editingClass.schoolYear = document.getElementById("class-year-input").value.trim();
+
+  const lines = document.getElementById("class-students-textarea").value.split("\n");
+  const newStudentsList = [];
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed.length > 0) {
+      const existing = (editingClass.students || []).find(s => s.name.toLowerCase() === trimmed.toLowerCase());
+      if (existing) {
+        newStudentsList.push(existing);
+      } else {
+        newStudentsList.push({
+          id: "s_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+          name: trimmed
+        });
+      }
+    }
+  });
+
+  editingClass.students = newStudentsList;
+
+  const idx = appData.classes.findIndex(c => c.id === editingClass.id);
+  if (idx !== -1) {
+    appData.classes[idx] = editingClass;
+  } else {
+    appData.classes.push(editingClass);
+  }
+
+  saveData();
+  alert("Klas opgeslagen!");
+  renderClassesList();
+  populateClassSelect("eval-class-select");
 }
 
 function deleteClass() {
@@ -1348,157 +959,206 @@ function deleteClass() {
     saveData();
     editingClass = null;
     initClassesScreen();
+    populateClassSelect("eval-class-select");
   }
 }
 
 function startNewSchoolYear() {
-  const newYear = prompt("Voer de naam van het nieuwe schooljaar in (bijv. 2026-2027):", "2026-2027");
-  if (newYear) {
-    appData.currentSchoolYear = newYear;
+  const nextYear = prompt("Voer het nieuwe schooljaar in (bijv. 2026-2027):");
+  if (nextYear && nextYear.trim() !== "") {
+    appData.currentSchoolYear = nextYear.trim();
     saveData();
     populateGlobalSchoolYearSelect();
     initClassesScreen();
-    alert(`Schooljaar gewijzigd naar ${newYear}.`);
+    alert(`Schooljaar gewijzigd naar ${appData.currentSchoolYear}`);
   }
 }
 
+function switchClassSubTab(tabName) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+
+  if (tabName === "edit") {
+    document.getElementById("tab-btn-class-edit").classList.add("active");
+    document.getElementById("tab-content-class-edit").classList.add("active");
+  } else if (tabName === "overview") {
+    document.getElementById("tab-btn-class-overview").classList.add("active");
+    document.getElementById("tab-content-class-overview").classList.add("active");
+    renderClassOverviewTable();
+  } else if (tabName === "detail") {
+    document.getElementById("tab-btn-student-detail").classList.add("active");
+    document.getElementById("tab-content-student-detail").classList.add("active");
+    populateStudentDetailSelect();
+    renderStudentDetailContent();
+  }
+}
+
+function renderClassOverviewTable() {
+  const wrapper = document.getElementById("class-overview-table-wrapper");
+  if (!editingClass) {
+    wrapper.innerHTML = "<p class='text-muted'>Selecteer eerst een klas.</p>";
+    return;
+  }
+
+  const students = editingClass.students || [];
+  const tasks = appData.tasks;
+
+  if (students.length === 0) {
+    wrapper.innerHTML = "<p class='text-muted'>Geen leerlingen in deze klas.</p>";
+    return;
+  }
+
+  let tableHtml = `<table class="overview-table" style="width:100%;border-collapse:collapse;margin-top:1rem;">
+    <thead>
+      <tr style="background:#f1f5f9;">
+        <th style="padding:10px;border:1px solid #cbd5e1;text-align:left;">Leerling</th>`;
+
+  tasks.forEach(t => {
+    tableHtml += `<th style="padding:10px;border:1px solid #cbd5e1;text-align:center;">${t.title}</th>`;
+  });
+
+  tableHtml += `</tr></thead><tbody>`;
+
+  students.forEach(s => {
+    tableHtml += `<tr><td style="padding:10px;border:1px solid #cbd5e1;font-weight:600;">${s.name}</td>`;
+    tasks.forEach(t => {
+      const ev = appData.evaluations.find(e => e.studentId === s.id && e.taskId === t.id && e.schoolYear === appData.currentSchoolYear);
+      if (ev) {
+        tableHtml += `<td style="padding:10px;border:1px solid #cbd5e1;text-align:center;color:#16a34a;font-weight:bold;">${ev.totalScore} / ${ev.maxScore}</td>`;
+      } else {
+        tableHtml += `<td style="padding:10px;border:1px solid #cbd5e1;text-align:center;color:#94a3b8;">-</td>`;
+      }
+    });
+    tableHtml += `</tr>`;
+  });
+
+  tableHtml += `</tbody></table>`;
+  wrapper.innerHTML = tableHtml;
+}
+
 function exportOverviewClassPDF() {
-  const taskId = document.getElementById("overview-task-select").value;
-  if (!taskId) { alert("Selecteer een opdracht."); return; }
-  currentSelectedTask = appData.tasks.find(t => t.id === taskId);
-  currentSelectedClass = editingClass;
-  exportClassPDF();
+  if (!editingClass) { alert("Selecteer een klas."); return; }
+  const wrapper = document.getElementById("class-overview-table-wrapper");
+  const opt = {
+    margin: 10,
+    filename: `Overzicht_${editingClass.name}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  };
+  html2pdf().set(opt).from(wrapper).save();
+}
+
+function populateStudentDetailSelect() {
+  const select = document.getElementById("detail-student-select");
+  if (!select) return;
+  select.innerHTML = "";
+
+  if (!editingClass || !editingClass.students) return;
+
+  editingClass.students.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = s.name;
+    select.appendChild(opt);
+  });
+}
+
+function renderStudentDetailContent() {
+  const select = document.getElementById("detail-student-select");
+  const container = document.getElementById("student-detail-content");
+  container.innerHTML = "";
+
+  if (!select || !select.value) {
+    container.innerHTML = "<p class='text-muted'>Selecteer een leerling.</p>";
+    return;
+  }
+
+  const studentId = select.value;
+  const evals = appData.evaluations.filter(e => e.studentId === studentId && e.schoolYear === appData.currentSchoolYear);
+
+  if (evals.length === 0) {
+    container.innerHTML = "<p class='text-muted'>Nog geen evaluaties gevonden voor deze leerling in dit schooljaar.</p>";
+    return;
+  }
+
+  evals.forEach(ev => {
+    const task = appData.tasks.find(t => t.id === ev.taskId);
+    const card = document.createElement("div");
+    card.className = "card-section mt-2";
+    card.innerHTML = `
+      <h3>${task ? task.title : 'Opdracht'} (${ev.date})</h3>
+      <p style="margin:0.5rem 0;">Score: <strong>${ev.totalScore} / ${ev.maxScore}</strong> | Spreektijd: ${ev.timer || '00:00'}</p>
+      <p style="font-size:0.9rem;color:#475569;">Feedback: ${ev.feedback || 'Geen.'}</p>
+    `;
+    container.appendChild(card);
+  });
 }
 
 /* ==========================================================================
-   SCHERM 4: GEBRUIKERS
+   GEBRUIKERS BEHEREN
    ========================================================================== */
 
 function initUsersScreen() {
   renderUsersList();
-  const loggedEl = document.getElementById("current-logged-user");
-  if (currentUser) {
-    loggedEl.textContent = `Ingelogd als: ${currentUser.username}`;
+  const currentText = document.getElementById("current-logged-user");
+  if (currentText && currentUser) {
+    currentText.textContent = `Ingelogd als: ${currentUser.username}`;
   }
 }
 
 function renderUsersList() {
   const ul = document.getElementById("users-list");
   ul.innerHTML = "";
-
   appData.users.forEach(u => {
     const li = document.createElement("li");
-    li.className = "user-list-item";
-
-    const name = document.createElement("span");
-    name.className = "user-name";
-    name.textContent = u.username;
-    li.appendChild(name);
-
-    if (currentUser && currentUser.id === u.id) {
-      const badge = document.createElement("span");
-      badge.className = "badge";
-      badge.textContent = "Ingelogd";
-      li.appendChild(badge);
-    } else {
-      const deleteBtn = document.createElement("button");
-      deleteBtn.type = "button";
-      deleteBtn.className = "btn btn-sm btn-danger";
-      deleteBtn.textContent = "Verwijderen";
-      deleteBtn.addEventListener("click", () => deleteUser(u.id));
-      li.appendChild(deleteBtn);
-    }
-
+    li.textContent = u.username;
     ul.appendChild(li);
   });
-}
-
-function deleteUser(userId) {
-  const user = appData.users.find(u => u.id === userId);
-  if (!user) return;
-
-  if (currentUser && currentUser.id === userId) {
-    alert("Je kunt de gebruiker waarmee je momenteel bent ingelogd niet verwijderen. Maak eerst een andere gebruiker aan en log daarmee in.");
-    return;
-  }
-
-  if (appData.users.length <= 1) {
-    alert("Er moet minstens één gebruiker overblijven.");
-    return;
-  }
-
-  if (!confirm(`Weet je zeker dat je gebruiker '${user.username}' wilt verwijderen?`)) return;
-
-  appData.users = appData.users.filter(u => u.id !== userId);
-  saveData();
-  renderUsersList();
-  alert(`Gebruiker '${user.username}' is verwijderd.`);
 }
 
 function createNewUser() {
   const userIn = document.getElementById("new-username").value.trim();
   const passIn = document.getElementById("new-password").value.trim();
-  if (!userIn || !passIn) { alert("Vul een gebruikersnaam en wachtwoord in."); return; }
 
-  if (appData.users.some(u => u.username.toLowerCase() === userIn.toLowerCase())) {
-    alert("Gebruikersnaam bestaat al.");
+  if (!userIn || !passIn) {
+    alert("Vul zowel gebruikersnaam als wachtwoord in.");
     return;
   }
 
-  appData.users.push({ id: "u_" + Date.now(), username: userIn, password: passIn });
+  const exists = appData.users.some(u => u.username.toLowerCase() === userIn.toLowerCase());
+  if (exists) {
+    alert("Deze gebruikersnaam bestaat al.");
+    return;
+  }
+
+  appData.users.push({
+    id: "u_" + Date.now(),
+    username: userIn,
+    password: passIn
+  });
+
   saveData();
   document.getElementById("new-username").value = "";
   document.getElementById("new-password").value = "";
   renderUsersList();
-  alert("Nieuwe gebruiker aangemaakt!");
+  alert("Gebruiker succesvol aangemaakt!");
 }
 
 function changePassword() {
+  if (!currentUser) return;
   const passIn = document.getElementById("change-password-input").value.trim();
-  if (!passIn) { alert("Voer een nieuw wachtwoord in."); return; }
-
-  if (currentUser) {
-    currentUser.password = passIn;
-    const uIndex = appData.users.findIndex(u => u.id === currentUser.id);
-    if (uIndex !== -1) {
-      appData.users[uIndex].password = passIn;
-      saveData();
-      document.getElementById("change-password-input").value = "";
-      alert("Wachtwoord gewijzigd!");
-    }
+  if (!passIn) {
+    alert("Voer een nieuw wachtwoord in.");
+    return;
   }
-}
-function duplicateCriterion(cIdx) {
-  if (!editingTask || !editingTask.criteria) return;
-  
-  // Maak een diepe kopie van het criterium
-  const criterionToCopy = editingTask.criteria[cIdx];
-  const duplicatedCriterion = JSON.parse(JSON.stringify(criterionToCopy));
-  
-  // GEWICHTIG: Geef de kopie een unieke ID zodat scores niet gekoppeld blijven!
-  duplicatedCriterion.id = "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-  
-  // Geef de titel een herkenbare toevoeging
-  duplicatedCriterion.title = `${duplicatedCriterion.title} (kopie)`;
-  
-  // Voeg het gekopieerde criterium direct achter het origineel in
-  editingTask.criteria.splice(cIdx + 1, 0, duplicatedCriterion);
-  
-  // Herteken de criteria-editor
-  renderCriteriaEditor();
-}
-function moveLevel(criterionIdx, levelIdx, direction) {
-  if (!editingTask || !editingTask.criteria[criterionIdx]) return;
-  const levels = editingTask.criteria[criterionIdx].levels;
-  const targetIdx = levelIdx + direction;
-  
-  // Controleer of de beweging binnen de grenzen valt
-  if (targetIdx < 0 || targetIdx >= levels.length) return;
-  
-  // Wissel de niveaus om in de array
-  const temp = levels[levelIdx];
-  levels[levelIdx] = levels[targetIdx];
-  levels[targetIdx] = temp;
-  
-  renderCriteriaEditor();
+
+  const idx = appData.users.findIndex(u => u.id === currentUser.id);
+  if (idx !== -1) {
+    appData.users[idx].password = passIn;
+    currentUser.password = passIn;
+    saveData();
+    document.getElementById("change-password-input").value = "";
+    alert("Wachtwoord succesvol gewijzigd!");
+  }
 }
