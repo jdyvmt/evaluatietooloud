@@ -554,13 +554,93 @@ function bouwPdfHtml(data) {
   let rijen = '';
   data.parameters.forEach(p => {
     rijen += `<tr>
-      <td style="padding:8px;border:1px solid #cbd5e1;font-weight:bold;width:30%;">${p.naam}</td>
-      <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;width:15%;">${p.score}</td>
-      <td style="padding:8px;border:1px solid #cbd5e1;width:55%;">${p.criterium}</td>
+      <td class="col-naam">${p.naam}</td>
+      <td class="col-score">${p.score}</td>
+      <td class="col-desc">${p.criterium}</td>
     </tr>`;
   });
 
   return `
+    <style>
+      .pdf-page-sheet {
+        width: 100%;
+        padding: 10mm 15mm;
+        box-sizing: border-box;
+        font-family: system-ui, -apple-system, sans-serif;
+        color: #0f172a;
+        background: #ffffff;
+      }
+      .pdf-titel {
+        font-size: 20pt;
+        font-weight: 800;
+        color: #2563eb;
+        margin: 0 0 4px 0;
+        line-height: 1.2;
+      }
+      .pdf-subtitel {
+        font-size: 13pt;
+        font-weight: 600;
+        color: #334155;
+        margin: 0 0 12px 0;
+      }
+      .pdf-meta-bar {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        font-size: 9pt;
+        color: #475569;
+        border-bottom: 2px solid #cbd5e1;
+        padding-bottom: 6px;
+        margin-bottom: 14px;
+      }
+      .pdf-sectie-titel {
+        font-size: 11pt;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 12px 0 6px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .pdf-tabel {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 4px;
+        font-size: 9.5pt;
+      }
+      .pdf-tabel th {
+        background-color: #f1f5f9;
+        color: #1e293b;
+        font-weight: 700;
+        padding: 6px 8px;
+        border: 1px solid #cbd5e1;
+        text-align: left;
+      }
+      .pdf-tabel td {
+        padding: 6px 8px;
+        border: 1px solid #cbd5e1;
+        vertical-align: top;
+      }
+      .col-naam { width: 30%; font-weight: 600; }
+      .col-score { width: 12%; text-align: center; }
+      .col-desc { width: 58%; }
+      
+      .pdf-feedback-box {
+        margin-top: 14px;
+        padding: 10px;
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        font-size: 9.5pt;
+      }
+      .pdf-eindscore {
+        margin-top: 14px;
+        font-size: 13pt;
+        font-weight: 800;
+        text-align: right;
+        color: #1e3a8a;
+      }
+    </style>
+
     <div class="pdf-page-sheet">
       <div class="pdf-titel">${data.titel}</div>
       <div class="pdf-subtitel">${data.leerling} &mdash; Klas ${data.klas}</div>
@@ -571,25 +651,27 @@ function bouwPdfHtml(data) {
         <span><strong>Schooljaar:</strong> ${data.schooljaar}</span>
       </div>
 
-      <h3 style="font-size:12pt;color:#1e293b;margin-top:12px;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Beoordeling</h3>
+      <div class="pdf-sectie-titel">Beoordeling</div>
       
-      <table style="width:100%;border-collapse:collapse;margin-top:5px;font-size:10pt;">
+      <table class="pdf-tabel">
         <thead>
-          <tr style="background:#f1f5f9;">
-            <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;">Criterium</th>
-            <th style="padding:8px;border:1px solid #cbd5e1;text-align:center;">Score</th>
-            <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;">Beschrijving</th>
+          <tr>
+            <th style="width:30%;">Criterium</th>
+            <th style="width:12%; text-align:center;">Score</th>
+            <th style="width:58%;">Beschrijving</th>
           </tr>
         </thead>
-        <tbody>${rijen}</tbody>
+        <tbody>
+          ${rijen}
+        </tbody>
       </table>
 
-      <div style="margin-top:16px;padding:12px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;font-size:10pt;">
+      <div class="pdf-feedback-box">
         <strong style="color:#0f172a;">Feedback:</strong><br>
-        <span style="white-space:pre-wrap;color:#334155;">${data.feedback}</span>
+        <span style="white-space:pre-wrap; color:#334155;">${data.feedback}</span>
       </div>
 
-      <div style="margin-top:16px;font-size:14pt;font-weight:bold;text-align:right;color:#1e3a8a;">
+      <div class="pdf-eindscore">
         Eindscore: ${data.eindscore}
       </div>
     </div>
@@ -614,13 +696,13 @@ async function exportStudentPDF() {
   container.innerHTML = bouwPdfHtml(data);
   window.scrollTo(0, 0);
 
-  const opt = {
-    margin: 0, // Marges worden door .pdf-page-sheet padding geregeld
-    filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
-    html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-
+ const opt = {
+  margin: 0,
+  filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
+  html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: 800 },
+  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+};
+  
   try {
     await html2pdf().set(opt).from(container).save();
   } catch (err) {
