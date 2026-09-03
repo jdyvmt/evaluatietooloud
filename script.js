@@ -693,63 +693,27 @@ async function exportStudentPDF() {
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
   const container = document.getElementById("pdf-export-container");
 
+  // Reset container en dwing A4-breedte af
+  container.removeAttribute("style");
+  container.style.display = "block";
+  container.style.width = "210mm";
+  container.style.backgroundColor = "#ffffff";
+
   container.innerHTML = bouwPdfHtml(data);
   window.scrollTo(0, 0);
 
- const opt = {
-  margin: 0,
-  filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
-  html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: 800 },
-  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-};
-  
-  try {
-    await html2pdf().set(opt).from(container).save();
-  } catch (err) {
-    console.error("PDF Export Fout:", err);
-    alert("Er is een fout opgetreden bij het genereren van de PDF.");
-  } finally {
-    container.innerHTML = "";
-  }
-}
-async function exportClassPDF() {
-  if (!currentSelectedClass || !currentSelectedTask) {
-    alert("Selecteer een klas en een opdracht.");
-    return;
-  }
-
-  const container = document.getElementById("pdf-export-container");
-  container.innerHTML = "";
-
-  const students = currentSelectedClass.students || [];
-  if (students.length === 0) {
-    alert("Deze klas heeft geen leerlingen.");
-    return;
-  }
-
-  students.forEach((student, index) => {
-    const evalData = appData.evaluations.find(
-      e => e.studentId === student.id && 
-           e.taskId === currentSelectedTask.id && 
-           e.schoolYear === appData.currentSchoolYear
-    );
-    const data = verzamelPdfData(student, currentSelectedTask, evalData);
-
-    const wrapper = document.createElement("div");
-    if (index > 0) {
-      wrapper.className = "html2pdf__page-break";
-    }
-    wrapper.innerHTML = bouwPdfHtml(data);
-    container.appendChild(wrapper);
-  });
-
-  window.scrollTo(0, 0);
-
   const opt = {
-    margin: 10,
-    filename: `Klas_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1024 },
+    margin: 0,
+    filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true, 
+      scrollX: 0, 
+      scrollY: 0,
+      windowWidth: 800,
+      letterRendering: true,
+      logging: false
+    },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
@@ -757,8 +721,76 @@ async function exportClassPDF() {
     await html2pdf().set(opt).from(container).save();
   } catch (err) {
     console.error("PDF Export Fout:", err);
+    alert("Er is een fout opgetreden bij het genereren van de PDF.");
   } finally {
     container.innerHTML = "";
+    container.style.display = "none";
+  }
+}
+
+async function exportClassPDF() {
+  if (!currentSelectedClass || !currentSelectedTask) {
+    alert("Selecteer een klas en opdracht.");
+    return;
+  }
+
+  const studentsInClass = appData.students.filter(
+    s => s.classId === currentSelectedClass.id
+  );
+
+  if (studentsInClass.length === 0) {
+    alert("Geen leerlingen gevonden in deze klas.");
+    return;
+  }
+
+  const container = document.getElementById("pdf-export-container");
+  
+  // Reset container en dwing A4-breedte af
+  container.removeAttribute("style");
+  container.style.display = "block";
+  container.style.width = "210mm";
+  container.style.backgroundColor = "#ffffff";
+
+  let gecombineerdeHtml = '';
+
+  studentsInClass.forEach(student => {
+    const evalData = appData.evaluations.find(
+      e => e.studentId === student.id && 
+           e.taskId === currentSelectedTask.id && 
+           e.schoolYear === appData.currentSchoolYear
+    );
+
+    const data = verzamelPdfData(student, currentSelectedTask, evalData);
+    gecombineerdeHtml += bouwPdfHtml(data);
+  });
+
+  container.innerHTML = gecombineerdeHtml;
+  window.scrollTo(0, 0);
+
+  const opt = {
+    margin: 0,
+    filename: `Evaluaties_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`,
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true, 
+      scrollX: 0, 
+      scrollY: 0,
+      windowWidth: 800,
+      letterRendering: true,
+      logging: false
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'], avoid: '.pdf-page-sheet' }
+  };
+
+  try {
+    await html2pdf().set(opt).from(container).save();
+  } catch (err) {
+    console.error("Klas PDF Export Fout:", err);
+    alert("Er is een fout opgetreden bij het genereren van de klas-PDF.");
+  } finally {
+    container.innerHTML = "";
+    container.style.display = "none";
   }
 }
 
