@@ -99,11 +99,15 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 .ml-2 { margin-left: 0.5rem; }
 .text-muted { color: #64748b; font-size: 0.875rem; }
 
-/* PDF EXPORT CONTAINER */
+/* PDF EXPORT CONTAINER & OPMAAK */
+@page {
+  size: A4;
+  margin: 0; /* Marges worden afgehandeld via de container padding */
+}
+
 #pdf-export-container {
   display: block !important;
   width: 210mm;
-  min-height: 297mm;
   background: #ffffff !important;
   color: #000000 !important;
   margin: 0 auto;
@@ -111,16 +115,18 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
   box-sizing: border-box;
 }
 
-.html2pdf__page-break {
-  page-break-before: always;
-  break-before: page;
-}
-
 .pdf-page-sheet {
   width: 210mm;
   padding: 15mm;
   background: #ffffff;
   box-sizing: border-box;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.html2pdf__page-break {
+  page-break-before: always;
+  break-before: page;
 }
 
 @media print {
@@ -129,23 +135,34 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
   #pdf-export-container { position: absolute; left: 0; top: 0; display: block !important; }
 }
 
-/* Dwingt A4-formaat af met een nette marge rondom */
-@page {
-  size: A4;
-  margin: 15mm;
+/* NIEUWE HEADER OPMAAK FOR PDF */
+.pdf-titel {
+  font-size: 20pt;
+  font-weight: 800;
+  color: #2563eb; /* Blauw */
+  margin-bottom: 4px;
 }
 
-/* Zorgt dat het document de volledige breedte benut */
-body, .container {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+.pdf-subtitel {
+  font-size: 14pt;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 12px;
 }
 
-/* Zorgt dat tabellen netjes over de volle breedte schalen */
-table {
+.pdf-meta-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9.5pt;
+  color: #64748b;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+/* Zorgt dat tabellen in de PDF de volle breedte pakken */
+#pdf-export-container table {
   width: 100% !important;
   table-layout: fixed;
   border-collapse: collapse;
