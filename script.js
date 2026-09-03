@@ -615,35 +615,53 @@ function bouwPdfHtml(data) {
   `;
 }
 
-function exportStudentPDF() {
+async function exportStudentPDF() {
   if (!currentSelectedStudent || !currentSelectedTask) {
     alert("Selecteer een leerling en opdracht.");
     return;
   }
 
-  const evalData = appData.evaluations.find(e => e.studentId === currentSelectedStudent.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
-  const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
+  const evalData = appData.evaluations.find(
+    e => e.studentId === currentSelectedStudent.id && 
+         e.taskId === currentSelectedTask.id && 
+         e.schoolYear === appData.currentSchoolYear
+  );
 
+  const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
   const container = document.getElementById("pdf-export-container");
+
+  // 1. Vul de container
   container.innerHTML = bouwPdfHtml(data);
 
+  // 2. Scroll kort naar boven zodat html2canvas de juiste x/y coördinaten pakt
+  window.scrollTo(0, 0);
+
   const opt = {
-    margin: 0,
+    margin: 10,
     filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true, 
+      logging: false,
+      windowWidth: 1024 // Dwingt een desktop-viewport af
+    },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
-  // Korte wachttijd om de DOM de kans te geven het element te renderen
-  setTimeout(() => {
-    html2pdf().set(opt).from(container).save().then(() => {
-      container.innerHTML = "";
-    });
-  }, 250);
+  try {
+    // 3. Genereer PDF synchroon
+    await html2pdf().set(opt).from(container).save();
+  } catch (err) {
+    console.error("PDF Export Fout:", err);
+    alert("Er is een fout opgetreden bij het genereren van de PDF.");
+  } functioning {
+    // 4. Maak de container altijd direct weer leeg
+    container.innerHTML = "";
+  }
 }
 
-function exportClassPDF() {
+async function exportClassPDF() {
   if (!currentSelectedClass || !currentSelectedTask) {
     alert("Selecteer een klas en een opdracht.");
     return;
@@ -658,8 +676,13 @@ function exportClassPDF() {
     return;
   }
 
+  // Bouw alle pagina's op
   students.forEach((student, index) => {
-    const evalData = appData.evaluations.find(e => e.studentId === student.id && e.taskId === currentSelectedTask.id && e.schoolYear === appData.currentSchoolYear);
+    const evalData = appData.evaluations.find(
+      e => e.studentId === student.id && 
+           e.taskId === currentSelectedTask.id && 
+           e.schoolYear === appData.currentSchoolYear
+    );
     const data = verzamelPdfData(student, currentSelectedTask, evalData);
 
     const wrapper = document.createElement("div");
@@ -670,19 +693,23 @@ function exportClassPDF() {
     container.appendChild(wrapper);
   });
 
+  window.scrollTo(0, 0);
+
   const opt = {
-    margin: 0,
+    margin: 10,
     filename: `Klas_${currentSelectedClass.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+    html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1024 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
-  setTimeout(() => {
-    html2pdf().set(opt).from(container).save().then(() => {
-      container.innerHTML = "";
-    });
-  }, 250);
+  try {
+    await html2pdf().set(opt).from(container).save();
+  } catch (err) {
+    console.error("PDF Export Fout:", err);
+  } finally {
+    container.innerHTML = "";
+  }
 }
 
 /* ==========================================================================
