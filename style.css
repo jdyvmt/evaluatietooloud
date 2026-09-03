@@ -109,19 +109,17 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 
 /* PDF EXPORT STYLING */
 #pdf-export-container {
-  display: none;
+  display: block !important;
   position: absolute;
   top: 0;
-  left: 0;
+  left: -9999px; /* Buiten het scherm plaatsen i.p.v. display:none */
   width: 210mm;
   background: #ffffff;
-  z-index: -9999;
 }
 
 .pdf-page-sheet {
   width: 210mm;
-  min-height: 297mm;
-  padding: 15mm 15mm 15mm 15mm;
+  padding: 15mm;
   background: #ffffff;
   box-sizing: border-box;
 }
