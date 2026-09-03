@@ -1055,3 +1055,41 @@ function renderStudentDetailContent() {
     container.appendChild(card);
   });
 }
+
+// Plak hier de unieke URL van je Google Apps Script
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyub340N-mhLzmBy_m6Qi7zrm4wHY4u4GBaBukBC5EGeyy8_s8HJfa0e3mbX9v9l7sp/exec";
+
+// 1. Evaluatie opslaan in Google Sheets
+async function slaEvaluatieOpInCloud(evaluatieData) {
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors', // Noodzakelijk voor Google Apps Script cross-origin requests
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(evaluatieData)
+    });
+    
+    alert("Evaluatie succesvol opgeslagen in de cloud!");
+    // Optioneel: haal direct de nieuwste lijst op
+    laadEvaluatiesUitCloud(); 
+  } catch (err) {
+    console.error("Fout bij opslaan in de cloud:", err);
+    alert("Er ging iets mis bij het opslaan.");
+  }
+}
+
+// 2. Evaluaties ophalen uit Google Sheets
+async function laadEvaluatiesUitCloud() {
+  try {
+    const response = await fetch(SCRIPT_URL);
+    const data = await response.json();
+    
+    console.log("Opgehaalde evaluaties uit de cloud:", data);
+    
+    // 'data' bevat nu al je rijen uit Google Sheets!
+    // Hier kun je je UI/historiek-lijst bijwerken met de opgehaalde gegevens.
+    return data;
+  } catch (err) {
+    console.error("Fout bij ophalen uit de cloud:", err);
+  }
+}
