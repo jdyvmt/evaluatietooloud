@@ -672,7 +672,7 @@ async function exportStudentPDF() {
   } catch (err) {
     console.error("PDF Export Fout:", err);
     alert("Er is een fout opgetreden bij het genereren van de PDF.");
-  } functioning {
+  } finally {
     // 4. Maak de container altijd direct weer leeg
     container.innerHTML = "";
   }
