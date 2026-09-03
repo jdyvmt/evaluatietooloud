@@ -128,3 +128,25 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
   #pdf-export-container, #pdf-export-container * { visibility: visible; }
   #pdf-export-container { position: absolute; left: 0; top: 0; display: block !important; }
 }
+
+/* Dwingt A4-formaat af met een nette marge rondom */
+@page {
+  size: A4;
+  margin: 15mm;
+}
+
+/* Zorgt dat het document de volledige breedte benut */
+body, .container {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Zorgt dat tabellen netjes over de volle breedte schalen */
+table {
+  width: 100% !important;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
