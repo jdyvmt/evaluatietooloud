@@ -2,15 +2,11 @@ const STORAGE_KEY = "evaluatietool_app_data_v2";
 
 let appData = {
   currentSchoolYear: "2025-2026",
-  users: [
-    { id: "u1", username: "jordy", password: "password123" }
-  ],
   tasks: [],
   classes: [],
   evaluations: []
 };
 
-let currentUser = null;
 let currentSelectedTask = null;
 let currentSelectedClass = null;
 let currentSelectedStudent = null;
@@ -42,9 +38,6 @@ function saveData() {
 function seedDefaultData() {
   appData = {
     currentSchoolYear: "2025-2026",
-    users: [
-      { id: "u1", username: "jordy", password: "password123" }
-    ],
     tasks: [
       {
         id: "t1",
@@ -85,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadData();
   setupEventListeners();
   populateGlobalSchoolYearSelect();
-  checkLoginSession();
+  initEvalScreen();
 });
 
 function populateGlobalSchoolYearSelect() {
@@ -115,41 +108,10 @@ function populateGlobalSchoolYearSelect() {
   };
 }
 
-function verifieerInloggen(gebruikersnaamInput, wachtwoordInput) {
-  const ingegevenUser = gebruikersnaamInput.trim().toLowerCase();
-  const ingegevenPass = wachtwoordInput.trim();
-
-  // 1. Ophalen van eventueel opgeslagen gebruikers uit LocalStorage
-  const opgeslagenUsers = JSON.parse(localStorage.getItem("app_users") || "[]");
-
-  // 2. HARDCODED FALLBACK: Zorg dat je hier jouw vaste gegevens invult
-  const standaardAdmin = {
-    username: "j.vermote", // Vul hier de exacte naam in die je op de iMac gebruikt
-    password: "jdyvmt"      // Vul hier het exacte wachtwoord in
-  };
-
-  // 3. Controleer eerst het standaardaccount
-  if (ingegevenUser === standaardAdmin.username.toLowerCase() && ingegevenPass === standaardAdmin.password) {
-    return true;
-  }
-
-  // 4. Controleer daarna de dynamic accounts uit localStorage
-  const bestaandeUser = opgeslagenUsers.find(u => u.username.toLowerCase() === ingegevenUser);
-  if (bestaandeUser && bestaandeUser.password === ingegevenPass) {
-    return true;
-  }
-
-  return false;
-}
-
 function setupEventListeners() {
-  document.getElementById("btn-login").addEventListener("click", handleLogin);
-  document.getElementById("btn-logout").addEventListener("click", handleLogout);
-
   document.getElementById("nav-eval").addEventListener("click", () => switchScreen("screen-eval"));
   document.getElementById("nav-dashboard").addEventListener("click", () => switchScreen("screen-dashboard"));
   document.getElementById("nav-classes").addEventListener("click", () => switchScreen("screen-classes"));
-  document.getElementById("nav-users").addEventListener("click", () => switchScreen("screen-users"));
 
   document.getElementById("eval-task-select").addEventListener("change", (e) => {
     currentSelectedTask = appData.tasks.find(t => t.id === e.target.value) || null;
@@ -190,9 +152,6 @@ function setupEventListeners() {
   document.getElementById("tab-btn-student-detail").addEventListener("click", () => switchClassSubTab("detail"));
   document.getElementById("btn-download-overview-class-pdf").addEventListener("click", exportOverviewClassPDF);
   document.getElementById("detail-student-select").addEventListener("change", renderStudentDetailContent);
-
-  document.getElementById("btn-add-user").addEventListener("click", createNewUser);
-  document.getElementById("btn-change-password").addEventListener("click", changePassword);
 }
 
 function switchScreen(screenId) {
@@ -209,33 +168,7 @@ function switchScreen(screenId) {
   } else if (screenId === "screen-classes") {
     document.getElementById("nav-classes").classList.add("active");
     initClassesScreen();
-  } else if (screenId === "screen-users") {
-    document.getElementById("nav-users").classList.add("active");
-    initUsersScreen();
   }
-}
-
-function handleLogin() {
-  const userIn = document.getElementById("login-username").value.trim();
-  const passIn = document.getElementById("login-password").value.trim();
-  const errorEl = document.getElementById("login-error");
-  const found = appData.users.find(u => u.username.toLowerCase() === userIn.toLowerCase() && u.password === passIn);
-
-  if (found) {
-    currentUser = found;
-    errorEl.textContent = "";
-    document.getElementById("login-username").value = "";
-    document.getElementById("login-password").value = "";
-    checkLoginSession();
-  } else {
-    errorEl.textContent = "Ongeldige gebruikersnaam of wachtwoord.";
-  }
-}
-
-function handleLogout() {
-  currentUser = null;
-  resetTimer();
-  checkLoginSession();
 }
 
 function toggleTimer() {
@@ -556,7 +489,7 @@ function formatScore(value) {
 }
 
 /* ==========================================================================
-   PDF EXPORT FUNCTIONALITEIT (CORRECTE RENDERING EN STRUCTUUR)
+   PDF EXPORT FUNCTIONALITEIT
    ========================================================================== */
 
 function verzamelPdfData(student, task, evaluation) {
@@ -647,33 +580,23 @@ async function exportStudentPDF() {
   const data = verzamelPdfData(currentSelectedStudent, currentSelectedTask, evalData);
   const container = document.getElementById("pdf-export-container");
 
-  // 1. Vul de container
   container.innerHTML = bouwPdfHtml(data);
-
-  // 2. Scroll kort naar boven zodat html2canvas de juiste x/y coördinaten pakt
   window.scrollTo(0, 0);
 
   const opt = {
     margin: 10,
     filename: `Evaluatie_${currentSelectedStudent.name}_${currentSelectedTask.title}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { 
-      scale: 2, 
-      useCORS: true, 
-      logging: false,
-      windowWidth: 1024 // Dwingt een desktop-viewport af
-    },
+    html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1024 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
   try {
-    // 3. Genereer PDF synchroon
     await html2pdf().set(opt).from(container).save();
   } catch (err) {
     console.error("PDF Export Fout:", err);
     alert("Er is een fout opgetreden bij het genereren van de PDF.");
   } finally {
-    // 4. Maak de container altijd direct weer leeg
     container.innerHTML = "";
   }
 }
@@ -693,7 +616,6 @@ async function exportClassPDF() {
     return;
   }
 
-  // Bouw alle pagina's op
   students.forEach((student, index) => {
     const evalData = appData.evaluations.find(
       e => e.studentId === student.id && 
@@ -1134,76 +1056,3 @@ function renderStudentDetailContent() {
     container.appendChild(card);
   });
 }
-
-/* ==========================================================================
-   GEBRUIKERS BEHEREN
-   ========================================================================== */
-
-function initUsersScreen() {
-  renderUsersList();
-  const currentText = document.getElementById("current-logged-user");
-  if (currentText && currentUser) {
-    currentText.textContent = `Ingelogd als: ${currentUser.username}`;
-  }
-}
-
-function renderUsersList() {
-  const ul = document.getElementById("users-list");
-  ul.innerHTML = "";
-  appData.users.forEach(u => {
-    const li = document.createElement("li");
-    li.textContent = u.username;
-    ul.appendChild(li);
-  });
-}
-
-function createNewUser() {
-  const userIn = document.getElementById("new-username").value.trim();
-  const passIn = document.getElementById("new-password").value.trim();
-
-  if (!userIn || !passIn) {
-    alert("Vul zowel gebruikersnaam als wachtwoord in.");
-    return;
-  }
-
-  const exists = appData.users.some(u => u.username.toLowerCase() === userIn.toLowerCase());
-  if (exists) {
-    alert("Deze gebruikersnaam bestaat al.");
-    return;
-  }
-
-  appData.users.push({
-    id: "u_" + Date.now(),
-    username: userIn,
-    password: passIn
-  });
-
-  saveData();
-  document.getElementById("new-username").value = "";
-  document.getElementById("new-password").value = "";
-  renderUsersList();
-  alert("Gebruiker succesvol aangemaakt!");
-}
-
-function changePassword() {
-  if (!currentUser) return;
-  const passIn = document.getElementById("change-password-input").value.trim();
-  if (!passIn) {
-    alert("Voer een nieuw wachtwoord in.");
-    return;
-  }
-
-  const idx = appData.users.findIndex(u => u.id === currentUser.id);
-  if (idx !== -1) {
-    appData.users[idx].password = passIn;
-    currentUser.password = passIn;
-    saveData();
-    document.getElementById("change-password-input").value = "";
-    alert("Wachtwoord succesvol gewijzigd!");
-  }
-}
-// Voorbeeld in script.js
-
-const GELDIGE_LOGINS = [
-  { username: "j.vermote", password: "jdyvmt" }
-];
